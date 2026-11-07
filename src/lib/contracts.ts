@@ -147,7 +147,7 @@ export type MultipleChoiceQuestion = {
   sectionId: string;
   evidence: string;
 };
-export type MultipleChoiceResponse = { questions: MultipleChoiceQuestion[]; origin: "sample" | "ai" };
+export type MultipleChoiceResponse = { questions: MultipleChoiceQuestion[]; origin: "sample" | "ai"; warning?: string };
 export type CourseListResponse = { courses: CourseSummary[]; compilationAvailable: boolean };
 export type CourseResponse = { course: CourseSummary };
 export type ExtractedSourceResponse = { name: string; text: string; warnings: string[] };

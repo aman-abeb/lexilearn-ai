@@ -72,3 +72,33 @@ test("rejects missing or excessive notes and prompt", () => {
 test("a prompt for the sample needs AI instead of silently returning unrelated stock questions", async () => {
   await assert.rejects(createExamPracticeProvider({}).generate(SAMPLE_MATERIAL, "Focus on accuracy"), (error: unknown) => error instanceof HttpError && error.code === "AI_NOT_CONFIGURED");
 });
+
+test("keeps valid questions when other questions fail and tells the learner", async () => {
+  const result = await provider({ questions: [question, { ...question, evidence: "An unsupported claim appears here." }], extra: true }).generate(material);
+  assert.deepEqual(result.questions, [question]);
+  assert.match(result.warning ?? "", /1 generated question was omitted/);
+});
+
+test("matches harmless quote and whitespace differences but returns the source wording", async () => {
+  const notes = "A “model”\n  uses data to make predictions about new examples.";
+  const output = { ...question, sectionId: "provided-notes", evidence: '"A "model" uses data to make predictions"' };
+  const result = await provider({ questions: [output] }).generateFromNotes(notes);
+  assert.equal(result.questions[0].evidence, "A “model”\n  uses data to make predictions");
+});
+
+test("retries once when no questions pass validation", async () => {
+  let calls = 0;
+  const custom = createExamPracticeProvider({ apiKey: "test-key", fetch: async () => {
+    calls++;
+    const item = calls === 1 ? { ...question, evidence: "An unsupported claim appears here." } : question;
+    return Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ questions: [item] }) } }] });
+  } });
+  const result = await custom.generate(material);
+  assert.equal(calls, 2);
+  assert.deepEqual(result.questions, [question]);
+});
+
+test("does not accept paraphrases or passages joined by ellipses", async () => {
+  const fabricated = { ...question, evidence: "Photosynthesis uses light energy ... carbon dioxide and water." };
+  await assert.rejects(provider({ questions: [fabricated] }).generate(material), (error: unknown) => error instanceof HttpError && error.code === "INVALID_QUESTIONS");
+});
