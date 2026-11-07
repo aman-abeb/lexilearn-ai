@@ -25,7 +25,7 @@ LexiLearn AI helps students with dyslexia work through university reading materi
 
 Dense slides, long written notes, crowded layouts, and unfamiliar terminology can make university reading demanding for some students with dyslexia. The initial LexiLearn experience focuses on this specific reading context, with a real lecture and feedback from the students it aims to support.
 
-LexiLearn lets students choose how the same course content is presented. The working first version includes paragraph and sentence reading, comfortable text and spacing choices, saved section progress, revisit markers, a source-linked personal glossary, and adjustable narration. AI terminology explanations, source-linked clarification, and short comprehension checks are planned additions to this reading experience.
+LexiLearn lets students choose how course content is presented. The current version organizes saved courses and sequentially numbered lectures, collects notes/slide text/recording transcripts, and can compile source-linked study notes and key terms through a configured AI provider. Paragraph and sentence reading, comfortable spacing choices, saved progress, a personal glossary, and adjustable narration support the reading flow. Automatic Webex access, selected-passage clarification, and comprehension checks are planned additions.
 
 **Reading accessibility for students with dyslexia is the initial focus.** Comprehension checks and progress tracking support that purpose. No layout, font, or method is assumed to work for every dyslexic student. Captions, transcripts, and support for other accessibility needs remain part of the broader roadmap.
 
@@ -54,8 +54,8 @@ No diagnosis is required. Features are selected by the student rather than autom
 
 ## Core experience
 
-1. A student adds text from one real university lecture.
-2. LexiLearn retains the original and presents navigable reading sections.
+1. A student selects a saved course and creates its next numbered lecture.
+2. The student adds notes, slides, and a recording transcript. LexiLearn preserves extracted source text and, with AI configured, compiles it into connected study notes with original-source links. A recording link can be saved for reference; private recording access is not yet automated.
 3. The student chooses text size, spacing, typeface, background, and focus preferences.
 4. The student reads one section or sentence at a time, optionally listening with speed and pause controls, and can return to the original text.
 5. The student saves terms in a personal glossary, marks passages to revisit, and resumes from the last section after a break.
@@ -220,7 +220,7 @@ This is the target AI-enabled demonstration after the application foundation is 
 
 AI supports transcription, contextual explanations, content adaptation, and interpretation of practice responses. Standard application logic handles display settings, navigation, permissions, storage, and source links.
 
-The foundation uses Next.js App Router, React, TypeScript, and Node.js `route.ts` handlers. See [README.md](README.md) for setup and [ARCHITECTURE.md](docs/ARCHITECTURE.md) for the implemented boundaries. A live AI model has not yet been selected or connected.
+The application uses Next.js App Router, React, TypeScript, and Node.js `route.ts` handlers. See [README.md](README.md) for setup and [ARCHITECTURE.md](docs/ARCHITECTURE.md) for the implemented boundaries. Whole-lecture compilation uses a configurable OpenAI-compatible provider with `gpt-4.1-mini` as the default model; a server-side key is required. Selected-section adaptation and practice remain future work.
 
 ## Responsible design
 

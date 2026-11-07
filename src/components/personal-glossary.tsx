@@ -7,11 +7,12 @@ import { readingStyle } from "./preference-controls";
 import { useReadingPreferences } from "./reading-preferences-provider";
 import { useReadingProgress } from "./reading-progress-provider";
 
-export function PersonalGlossary({ material, section, entries, onOpenSection }: {
+export function PersonalGlossary({ material, section, entries, onOpenSection, onOpenSource }: {
   material: Material;
   section: MaterialSection;
   entries: GlossaryEntry[];
   onOpenSection: (sectionId: string) => void;
+  onOpenSource?: (sourceId: string) => void;
 }) {
   const id = useId();
   const [term, setTerm] = useState("");
@@ -24,7 +25,7 @@ export function PersonalGlossary({ material, section, entries, onOpenSection }: 
     event.preventDefault();
     const existing = entries.find(entry => entry.sectionId === section.id && entry.term.toLowerCase() === term.trim().toLowerCase());
     if (!existing && entries.length >= 100) { setMessage("Your glossary has 100 terms. Remove a term before adding another."); return; }
-    const result = glossaryEntrySchema.safeParse({ id: existing?.id ?? crypto.randomUUID(), term, meaning, sectionId: section.id });
+    const result = glossaryEntrySchema.safeParse({ id: existing?.id ?? crypto.randomUUID(), term, meaning, sectionId: section.id, sourceIds: section.sourceIds, sectionTitle: section.title });
     if (!result.success) { setMessage("Add a term and a meaning using more than spaces."); return; }
     updateProgress(material, current => ({
       ...current,
@@ -45,10 +46,11 @@ export function PersonalGlossary({ material, section, entries, onOpenSection }: 
       </form>
       <p className="field-help" role="status">{message}</p>
       {entries.length > 0 && <ul className="glossary-list">{entries.map(entry => {
-        const source = material.sections.find(item => item.id === entry.sectionId)!;
+        const source = material.sections.find(item => item.id === entry.sectionId);
+        const originalSourceId = entry.sourceIds?.find(id => material.sources.some(item => item.id === id));
         return <li key={entry.id}>
           <div className={`glossary-entry theme-${preferences.theme}`} style={readingStyle(preferences)}><div className="reading-sample"><h3>{entry.term}</h3><p>{entry.meaning}</p></div></div>
-          <div className="glossary-actions"><button type="button" className="button button-ghost button-small" onClick={() => onOpenSection(entry.sectionId)}>Return to {source.title}</button><button type="button" className="button button-ghost button-small" aria-label={`Remove ${entry.term} from glossary`} onClick={() => {
+          <div className="glossary-actions"><button type="button" className="button button-ghost button-small" onClick={() => source ? onOpenSection(entry.sectionId) : originalSourceId && onOpenSource?.(originalSourceId)}>{source ? `Return to ${source.title}` : "Open original source"}</button><button type="button" className="button button-ghost button-small" aria-label={`Remove ${entry.term} from glossary`} onClick={() => {
             updateProgress(material, current => ({ ...current, glossary: current.glossary.filter(item => item.id !== entry.id) }));
             setMessage(`${entry.term} removed from your glossary.`);
           }}>Remove</button></div>

@@ -6,7 +6,7 @@ The application foundation is shared. Divide the next work into three areas so e
 
 Use student-selected preferences. Do not infer a diagnosis or promise that one font, color, or layout will suit everyone.
 
-**Current baseline:** The reader already includes a sentence guide, browser-local read/revisit markers and resume position, a source-linked personal glossary, and narration speed/pause/resume controls. Build on these when adding explanations and practice. Existing read markers are student-selected and are not comprehension results; account-synced progress remains future work.
+**Current baseline:** Saved courses, atomic course-local lecture numbering, multi-source lecture setup, PDF/PPTX/text/caption extraction, and configurable whole-lecture AI compilation are implemented. The study workspace includes original-source links, a sentence guide, read/revisit markers, resume position, a personal glossary, narration controls, and text export. Read markers are student-selected rather than comprehension results. Automatic Webex access, audio transcription, selected-passage adaptation, quizzes, and account-synced progress remain follow-up work.
 
 ## Person 1 — Student interface and accessibility
 
@@ -37,13 +37,13 @@ Use student-selected preferences. Do not infer a diagnosis or promise that one f
 
 ## Person 2 — Material ingestion, storage, and backend routes
 
-**Own:** `src/app/api/`, `src/server/store.ts`, `src/server/materials.ts`, future `src/server/ingestion/`, and backend persistence tests.
+**Own:** `src/app/api/`, `src/server/store.ts`, `src/server/materials.ts`, `src/server/ingestion/`, and backend persistence tests.
 
 **Suggested branch:** `codex/person-2-content-backend`
 
 ### Tasks, in order
 
-1. Agree the real lecture and supported input format with the team. Add PDF text extraction only if needed for that lecture; retain pasted text as a working fallback.
+1. Agree the real lecture with the team and verify its PDF/PPTX extraction and caption import. Add an authorized Webex/transcription connector if the demonstration requires automatic recording access; retain transcript import as a working fallback.
 2. Preserve source references during extraction. Keep page/section identifiers stable so explanations can link back to the correct original passage.
 3. Define upload size/type limits and clear extraction errors. Avoid silently dropping equations, diagrams, or pages that cannot be read.
 4. Connect the adaptation route to Person 3's provider. Keep validation, status codes, and error responses consistent.
@@ -70,7 +70,7 @@ Use student-selected preferences. Do not infer a diagnosis or promise that one f
 
 ### Tasks, in order
 
-1. Implement the provider interface for one model. Keep the key server-side, enforce a timeout, validate the model's structured output, and preserve an explicit missing-key error.
+1. Configure and evaluate the existing compilation provider on the real lecture. Check full topic coverage, retained exceptions/equations, output length, and valid source links; the provider already handles timeout, JSON validation, and missing configuration.
 2. Implement the three agreed adaptation modes: plain-language explanation, smaller steps, and terminology explanation. Use the selected source section and necessary surrounding context.
 3. Preserve definitions, equations, conditions, and exceptions. Return warnings when the source is ambiguous or insufficient, and validate every returned source ID.
 4. Create a small source-grounded comprehension check with expected answers and explanatory feedback. Agree its request/result types with Persons 1 and 2 before wiring it into the app.

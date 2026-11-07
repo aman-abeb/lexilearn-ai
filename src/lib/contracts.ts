@@ -4,6 +4,43 @@ export type MaterialSection = {
   title: string;
   text: string;
   sourceLabel: string;
+  sourceIds?: string[];
+};
+
+export type Course = {
+  id: string;
+  name: string;
+  code: string;
+  term: string;
+  createdAt: string;
+  isSample: boolean;
+};
+
+export type CourseSummary = Course & { lectureCount: number; nextLectureNumber: number };
+export type CreateCourseInput = { name: string; code?: string; term?: string };
+export type SourceKind = "notes" | "slides" | "recording" | "transcript";
+export type YouTubeTranscriptMetadata = {
+  platform: "youtube";
+  videoId: string;
+  language: string;
+  languageName: string;
+  automatic: boolean;
+  retrievedAt: string;
+  edited?: boolean;
+};
+export type CaptionLanguage = { code: string; name: string; automatic: boolean };
+export type LectureSourceInput = { kind: SourceKind; name: string; text: string; url?: string; warnings?: string[]; transcript?: YouTubeTranscriptMetadata };
+export type LectureSource = LectureSourceInput & { id: string; addedAt: string; updatedAt?: string };
+
+export type CompiledNotes = {
+  overview: string;
+  sections: MaterialSection[];
+  keyTerms: { term: string; meaning: string; sourceIds: string[] }[];
+  warnings: string[];
+  sourceIds: string[];
+  sourceVersions?: Record<string, string>;
+  generatedAt: string;
+  model: string;
 };
 
 export type Material = {
@@ -16,7 +53,13 @@ export type Material = {
   createdAt: string;
   wordCount: number;
   isSample: boolean;
+  courseId: string;
+  lectureNumber: number;
+  sources: LectureSource[];
+  compilation: CompiledNotes | null;
 };
+
+export type CreateLectureInput = { title: string; courseId: string; sources: LectureSourceInput[] };
 
 export type CreateMaterialInput = {
   title: string;
@@ -66,5 +109,9 @@ export type ApiError = {
 };
 
 export type MaterialListResponse = { materials: Material[] };
-export type MaterialResponse = { material: Material };
+export type MaterialResponse = { material: Material; compilationAvailable?: boolean };
 export type AdaptationResponse = { adaptation: AdaptationResult };
+export type CourseListResponse = { courses: CourseSummary[]; compilationAvailable: boolean };
+export type CourseResponse = { course: CourseSummary };
+export type ExtractedSourceResponse = { name: string; text: string; warnings: string[] };
+export type YouTubeImportResponse = { source: LectureSourceInput; captionsVtt: string; cueCount: number };

@@ -1,5 +1,6 @@
 import type { MaterialListResponse, MaterialResponse } from "@/lib/contracts";
-import { createMaterialSchema } from "@/lib/validation";
+import { z } from "zod";
+import { createLectureSchema, createMaterialSchema } from "@/lib/validation";
 import { handleApiError, readJson } from "@/server/http";
 import { createMaterial } from "@/server/materials";
 import { materialStore } from "@/server/store";
@@ -15,9 +16,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const input = await readJson(request, createMaterialSchema);
-    const material = createMaterial(input);
-    await materialStore.add(material);
+    const input = await readJson(request, z.union([createLectureSchema, createMaterialSchema]), 1_000_000);
+    const material = "courseId" in input ? await materialStore.createLecture(input) : await materialStore.add(createMaterial(input));
     return Response.json({ material } satisfies MaterialResponse, {
       status: 201,
       headers: { Location: `/api/materials/${material.id}` },

@@ -12,7 +12,7 @@ export function apiError(status: number, code: string, message: string): Respons
 }
 
 /** Bound the actual streamed body, including requests without Content-Length. */
-export async function readJson<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
+export function checkOrigin(request: Request): void {
   const origin = request.headers.get("origin");
   const requestUrl = new URL(request.url);
   // NextURL normalizes loopback addresses to localhost. Compare with the actual
@@ -22,26 +22,35 @@ export async function readJson<T>(request: Request, schema: z.ZodType<T>): Promi
   if (origin && origin !== requestUrl.origin) {
     throw new HttpError(403, "ORIGIN_NOT_ALLOWED", "Use this application's own material form.");
   }
-  if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
-    throw new HttpError(415, "UNSUPPORTED_CONTENT_TYPE", "Send this request as JSON.");
-  }
+}
+
+export async function readBody(request: Request, maxBytes: number): Promise<Uint8Array> {
   const reader = request.body?.getReader();
-  if (!reader) throw new HttpError(400, "INVALID_JSON", "A JSON request body is required.");
+  if (!reader) throw new HttpError(400, "INVALID_BODY", "A request body is required.");
   const chunks: Uint8Array[] = [];
   let size = 0;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > 256_000) {
+    if (size > maxBytes) {
       await reader.cancel();
-      throw new HttpError(413, "BODY_TOO_LARGE", "Use a shorter passage (up to 50,000 characters).");
+      throw new HttpError(413, "BODY_TOO_LARGE", "This upload is too large. Use a smaller file or a shorter passage.");
     }
     chunks.push(value);
   }
+  return Buffer.concat(chunks);
+}
+
+export async function readJson<T>(request: Request, schema: z.ZodType<T>, maxBytes = 256_000): Promise<T> {
+  checkOrigin(request);
+  if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
+    throw new HttpError(415, "UNSUPPORTED_CONTENT_TYPE", "Send this request as JSON.");
+  }
+  const bytes = await readBody(request, maxBytes);
   let data: unknown;
   try {
-    data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    data = JSON.parse(Buffer.from(bytes).toString("utf8"));
   } catch {
     throw new HttpError(400, "INVALID_JSON", "The request body is not valid JSON.");
   }

@@ -6,6 +6,8 @@ export const glossaryEntrySchema = z.object({
   term: z.string().trim().min(1).max(80),
   meaning: z.string().trim().min(1).max(500),
   sectionId: z.string().min(1).max(100),
+  sourceIds: z.array(z.string().max(100)).max(12).optional(),
+  sectionTitle: z.string().max(300).optional(),
 });
 
 const sectionIdsSchema = z.array(z.string().max(100)).catch([]);
@@ -35,12 +37,13 @@ export function parseProgressStore(value: unknown): ReadingProgressStore {
 export function getMaterialProgress(material: Material, saved?: ReadingProgress): ReadingProgress {
   const progress = saved ?? progressSchema.parse({});
   const sectionIds = new Set(material.sections.map(section => section.id));
+  const sourceIds = new Set(material.sources.map(source => source.id));
   const validIds = (ids: string[]) => [...new Set(ids)].filter(id => sectionIds.has(id));
   return {
     lastSectionId: progress.lastSectionId && sectionIds.has(progress.lastSectionId) ? progress.lastSectionId : null,
     completedSectionIds: validIds(progress.completedSectionIds),
     reviewSectionIds: validIds(progress.reviewSectionIds),
-    glossary: progress.glossary.filter(entry => sectionIds.has(entry.sectionId)),
+    glossary: progress.glossary.filter(entry => sectionIds.has(entry.sectionId) || entry.sourceIds?.some(id => sourceIds.has(id))),
   };
 }
 
