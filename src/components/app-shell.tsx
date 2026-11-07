@@ -7,6 +7,7 @@ import { useAuth } from "./auth-provider";
 import { Icon } from "./icon";
 import { useReadingPreferences } from "./reading-preferences-provider";
 import { ThemeToggle } from "./theme-toggle";
+import { FlowArtwork } from "./flow-artwork";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -30,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link href="/preferences" className={`nav-link ${isPreferences ? "active" : ""}`} aria-current={isPreferences ? "page" : undefined} aria-label="Reading preferences"><Icon name="sliders" /><span className="nav-label"><span className="nav-full">Reading preferences</span><span className="nav-short">Reading</span></span></Link>
         <Link href={user ? "/account" : "/auth"} className={`nav-link ${isAccount ? "active" : ""}`} aria-current={isAccount ? "page" : undefined} aria-label={user ? "Account" : "Sign in"}><Icon name="user" /><span className="nav-label"><span className="nav-full">{user ? "Account" : "Sign in"}</span><span className="nav-short">{user ? "Account" : "Sign in"}</span></span></Link>
       </nav>
-      <div className="sidebar-note"><span className="section-kicker">MADE FOR YOUR PACE</span><p>Less reading friction.<br />More room to understand.</p><small>Designed with dyslexic learners in mind. Always yours to adjust.</small></div>
+      <div className="sidebar-note"><FlowArtwork variant="path" className="sidebar-flow" /><span className="section-kicker">MADE FOR YOUR PACE</span><p>Less reading friction.<br />More room to understand.</p><small>Designed with dyslexic learners in mind. Always yours to adjust.</small></div>
       <div className="sidebar-footer"><span className="status-dot" />{user ? "Signed in" : "Your personal learning space"}</div>
     </aside>
     <div className="workspace"><header className="topbar"><span className="topbar-label">{label}</span><div className="topbar-actions"><ThemeToggle /><span className="topbar-status"><span className="status-dot" />{user && !syncError ? "Saved to your account" : "Saved in this browser"}</span>{user ? <Link href="/account" className="topbar-user">{user.name}</Link> : <Link href="/auth" className="button button-secondary button-small">Sign in</Link>}</div></header><main id="main-content" className="main-content" tabIndex={-1}>{children}</main></div>

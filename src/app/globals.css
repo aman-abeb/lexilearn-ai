@@ -860,3 +860,111 @@ details[open] > .study-panel-content, .reading-settings-drawer:not([hidden]), .n
   .flow-motion-toggle { display: none; }
   .button:hover, .nav-link:hover, .material-card:hover, .course-card:hover, .flow-feature:hover { transform: none; }
 }
+
+/* The landing page's paper, paths, and small moments of motion, throughout the app. */
+.workspace-vector { color: var(--green); overflow: visible; pointer-events: none; }
+.vector-wash { fill: var(--flow-soft); }
+.vector-trail { stroke: currentColor; stroke-width: 1.4; opacity: .65; stroke-linecap: round; stroke-dasharray: 550; animation: workspace-path-in 1.5s var(--motion-ease) both; }
+.vector-trail-secondary { stroke: currentColor; stroke-width: .8; opacity: .3; stroke-dasharray: 4 7; }
+.vector-paper { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.vector-back-paper { fill: var(--flow-peach); stroke: var(--line); }
+.vector-ink { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: .8; }
+.vector-accent { stroke: #bc805a; stroke-width: 1.7; stroke-linecap: round; }
+.vector-accent-fill { fill: #bc805a; }
+.vector-emphasis { stroke: #a6b68a; stroke-width: 9; stroke-linecap: round; opacity: .65; }
+.sidebar-flow { width: 100%; height: 95px; display: block; margin: 0 0 15px; }
+.app-shell .sidebar { background: var(--surface); border-right-color: var(--line); }
+.app-shell .sidebar-note { border-top: 0; padding-top: 20px; }
+.app-shell .sidebar-note .section-kicker { font-size: 10px; letter-spacing: .13em; }
+.app-shell .sidebar-note p { font-size: 15px; letter-spacing: -.015em; }
+.app-shell .nav-link { border-radius: 100px; padding-inline: 17px; }
+.app-shell .nav-link.active { box-shadow: 0 4px 12px #1f382410; }
+.app-shell .topbar { background: var(--surface); }
+.app-shell .topbar-label { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.app-shell .topbar-label::before { content: '✳'; color: #b77e59; font-size: 23px; line-height: 1; }
+.app-shell .button-primary, .app-shell .button-secondary, .auth-screen .button-primary { border-radius: 100px; }
+.app-shell .button-ghost { border-radius: 24px; }
+.app-shell .theme-switch { border-radius: 30px; }
+.app-shell .theme-switch button { border-radius: 50%; }
+.app-shell .eyebrow { font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
+.app-shell .page-heading h1 { font-weight: 500; letter-spacing: -.045em; }
+.library-welcome { position: relative; padding: 30px; background: var(--flow-soft); border: 1px solid var(--line); border-radius: 22px; gap: 16px; }
+.library-welcome > div { flex: 1; min-width: 0; }
+.library-welcome h1 { font-size: clamp(29px, 3.4vw, 43px); margin-bottom: 10px; }
+.library-welcome .page-subtitle { font-size: 14px; max-width: 40ch; }
+.welcome-art { width: 170px; height: 120px; flex-shrink: 1; }
+.library-welcome > .button { align-self: flex-end; font-size: 13px; }
+.app-shell .continue-panel { position: relative; background: var(--surface); border-color: var(--line); border-radius: 20px; box-shadow: 0 6px 24px #21352204; }
+.app-shell .continue-icon { border-radius: 50% 50% 40% 50%; background: var(--flow-peach); color: var(--ink); border-color: transparent; transform: rotate(-6deg); }
+.app-shell .continue-icon svg { transform: rotate(6deg); }
+.app-shell .continue-panel p { color: var(--muted); }
+.app-shell .continue-panel h2 { font-weight: 500; letter-spacing: -.025em; }
+.app-shell .course-shortcut { border-radius: 16px; transition: transform .25s var(--motion-ease), border-color .2s, box-shadow .25s; }
+.app-shell .course-icon, .app-shell .source-icon { background: var(--flow-soft); color: var(--green); border-radius: 13px 13px 13px 4px; }
+.app-shell .course-shortcut-add { background: transparent; }
+.app-shell .material-card, .app-shell .course-card { border-radius: 20px 36px 20px 20px; box-shadow: 0 5px 20px #21352204; }
+.app-shell .material-title, .app-shell .course-card h2 { font-weight: 500; letter-spacing: -.025em; }
+.app-shell .lecture-card-number { border-radius: 100px; background: var(--flow-soft); color: var(--green); font-size: 11px; letter-spacing: .02em; }
+.app-shell .badge { border-radius: 100px; }
+.app-shell .source-chips span { background: var(--canvas); border: 1px solid var(--line); border-radius: 20px; padding: 4px 9px; color: var(--muted); }
+.course-card-top { position: relative; min-height: 76px; }
+.course-card-art { width: 150px; height: 90px; position: absolute; left: 50px; top: -15px; }
+.course-card-top .badge { z-index: 1; }
+.app-shell .course-card:nth-child(3n + 2) .vector-wash { fill: var(--flow-peach); }
+.app-shell .library-filters { padding: 8px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); gap: 8px; }
+.app-shell .search-field { background: var(--canvas); border-color: transparent; border-radius: 12px; }
+.app-shell .course-filter select { border-color: transparent; background: var(--canvas); border-radius: 12px; }
+.app-shell .form-panel, .app-shell .preference-panel, .app-shell .source-editor, .app-shell .exam-practice { border-radius: 20px; box-shadow: 0 5px 24px #21352204; }
+.app-shell .form-steps { gap: 20px; }
+.app-shell .form-steps li:not(:last-child)::after { content: ''; width: 45px; height: 8px; border-top: 1px dashed #9ead8a; border-radius: 50%; margin-left: 10px; }
+.app-shell .upload-zone { background: var(--canvas); border-radius: 16px; }
+.app-shell .source-type { border-radius: 15px; background: var(--surface); }
+.app-shell .source-type.is-selected { background: var(--flow-soft); }
+.app-shell .workspace-navigation { background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: 17px; gap: 8px; }
+.app-shell .workspace-tabs { gap: 5px; }
+.app-shell .workspace-tabs > button { border: 0; border-radius: 100px; min-height: 44px; padding: 10px 15px; transition: background .2s, color .2s; }
+.app-shell .workspace-tabs > button[aria-pressed="true"] { background: var(--flow-soft); }
+.app-shell .compilation-panel { background: var(--flow-soft); border-color: var(--line); border-radius: 18px; }
+.app-shell .compilation-panel p { color: var(--muted); }
+.app-shell .reader-paper { border-radius: 20px; box-shadow: 0 7px 30px #21352207; }
+.app-shell .study-panel { border-radius: 16px; }
+.app-shell .study-panel > summary { transition: background .2s; }
+.app-shell .study-panel > summary:hover { background: var(--canvas); }
+.app-shell .audio-panel { border-radius: 16px; padding: 20px; border: 1px solid var(--line); background: var(--surface); }
+.app-shell .audio-panel .field-help { font-size: 12px; }
+.auth-flow-art { display: block; width: 240px; height: 135px; margin: 0 auto 25px; }
+.auth-screen .auth-card { background: var(--surface); border: 1px solid var(--line); padding: 38px; border-radius: 24px; box-shadow: 0 15px 50px #21352207; }
+.auth-screen .auth-card h1 { font-weight: 500; letter-spacing: -.04em; }
+@keyframes workspace-path-in { from { stroke-dashoffset: 550; opacity: 0; } to { stroke-dashoffset: 0; opacity: .65; } }
+@media (hover: hover) {
+  .app-shell .course-shortcut:hover { transform: translateY(-3px); box-shadow: 0 8px 20px #21352208; }
+  .app-shell .material-open svg, .app-shell .text-link svg { transition: transform .25s var(--motion-ease); }
+  .app-shell .material-open:hover svg, .app-shell .text-link:hover svg { transform: translateX(4px); }
+}
+@media (max-height: 850px) and (min-width: 701px) { .sidebar-flow { height: 65px; margin-bottom: 5px; } }
+@media (max-width: 1050px) { .welcome-art { width: 115px; } .library-welcome { padding: 25px; } }
+@media (max-width: 800px) {
+  .library-welcome { flex-wrap: wrap; }
+  .library-welcome > div { flex-basis: calc(100% - 140px); }
+  .library-welcome > .button { width: auto; }
+  .app-shell .workspace-navigation { flex-wrap: wrap; }
+}
+@media (max-width: 700px) {
+  .sidebar-flow { display: none; }
+  .app-shell .nav-link { padding: 8px; border-radius: 12px; }
+  .app-shell .topbar-label { font-size: 11px; gap: 6px; }
+  .library-welcome { padding: 22px; border-radius: 18px; }
+  .welcome-art { width: 90px; height: 90px; }
+  .library-welcome > div { flex-basis: calc(100% - 110px); }
+  .library-welcome h1 { font-size: 29px; }
+  .app-shell .continue-panel { padding: 22px; }
+  .app-shell .form-steps li:not(:last-child)::after { display: none; }
+  .app-shell .workspace-tabs > button { padding: 10px; font-size: 13px; }
+  .app-shell .audio-panel { padding: 16px; }
+  .auth-screen .auth-card { padding: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-vector * { animation: none !important; }
+  .app-shell .course-shortcut, .app-shell .material-open svg, .app-shell .text-link svg { transition: none; }
+  .app-shell .course-shortcut:hover { transform: none; }
+}

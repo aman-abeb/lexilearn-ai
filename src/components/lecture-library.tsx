@@ -8,6 +8,7 @@ import { getMaterialProgress } from "@/lib/client/reading-progress";
 import { lectureStatus, readingMaterial, SOURCE_LABELS } from "@/lib/lecture";
 import { Icon } from "./icon";
 import { useReadingProgress } from "./reading-progress-provider";
+import { FlowArtwork } from "./flow-artwork";
 
 export function LectureLibrary({ courseId }: { courseId?: string }) {
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -44,7 +45,7 @@ export function LectureLibrary({ courseId }: { courseId?: string }) {
 
   return <>
     {courseId && <Link href="/courses" className="back-link"><Icon name="back" size={17} />All courses</Link>}
-    <header className="page-heading heading-row"><div><p className="eyebrow">{course ? [course.code, course.term].filter(Boolean).join(" · ") || "Your course" : "A little more clarity"}</p><h1>{course?.name ?? "Your lecture space"}</h1><p className="page-subtitle">{course ? `Your lectures, in order. Next up: Lecture ${course.nextLectureNumber}.` : "Notes, slides, and recordings. Together in one comfortable place."}</p></div><Link href={addHref} className="button button-primary"><Icon name="plus" size={19} />Add lecture</Link></header>
+    <header className="page-heading heading-row library-welcome"><div><p className="eyebrow">{course ? [course.code, course.term].filter(Boolean).join(" · ") || "A little more clarity" : "A LITTLE MORE ROOM TO LEARN"}</p><h1>{course?.name ?? "Back to your flow."}</h1><p className="page-subtitle">{course ? `Your lectures, in order. Next up: Lecture ${course.nextLectureNumber}.` : "Your notes, your ideas, your next little breakthrough."}</p></div><FlowArtwork variant={course ? "course" : "notes"} className="welcome-art" /><Link href={addHref} className="button button-primary"><Icon name="plus" size={19} />Add lecture</Link></header>
     {!loading && !error && continuing && <section className="continue-panel" aria-labelledby="continue-heading"><span className="continue-icon"><Icon name="book" size={27} /></span><div><p className="eyebrow">Right where you left off</p><h2 id="continue-heading">{continuing.title}</h2><p>{continuing.course} · Lecture {continuing.lectureNumber}</p></div><Link href={`/read/${continuing.id}`} className="button button-secondary" aria-label={`Continue ${continuing.title}`}>Continue reading<Icon name="arrow" size={18} /></Link></section>}
     {!courseId && !loading && !error && <section className="course-strip" aria-labelledby="course-strip-heading"><div className="section-heading"><h2 id="course-strip-heading">Your courses</h2><Link className="text-link" href="/courses">Manage courses<Icon name="arrow" size={16} /></Link></div><div className="course-strip-grid">{courses.slice(0, 3).map(course => <Link href={`/courses/${course.id}`} className="course-shortcut" key={course.id}><span className="course-icon"><Icon name="courses" size={21} /></span><span><strong>{course.code || course.name}</strong><small>{course.code ? course.name : `${course.lectureCount} ${course.lectureCount === 1 ? "lecture" : "lectures"}`}</small></span></Link>)}<Link href="/courses" className="course-shortcut course-shortcut-add"><Icon name="plus" size={20} /><span>Add a course</span></Link></div></section>}
     <section aria-labelledby="lectures-heading">
