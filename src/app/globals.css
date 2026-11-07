@@ -279,6 +279,8 @@ p:last-child { margin-bottom: 0; }
 .audio-panel .reader-toolbar { margin-bottom: 10px; }
 .audio-speed { display: flex; align-items: center; gap: 9px; font-size: 14px; }
 .audio-speed select { width: auto; font-size: 14px; min-height: 44px; }
+.audio-voice { flex: 1 1 260px; min-width: 0; max-width: 100%; }
+.audio-voice select { width: 100%; min-width: 0; }
 .reader-progress { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; font-size: 13px; color: var(--muted); margin: 8px 0 24px; }
 .progress-track { height: 5px; border-radius: 5px; background: #e0e7d8; overflow: hidden; flex: 1; min-width: 70px; }
 .progress-track > span { display: block; height: 100%; background: #7d9c62; border-radius: inherit; transition: width .2s; }

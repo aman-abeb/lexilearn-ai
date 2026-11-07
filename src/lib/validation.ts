@@ -102,7 +102,7 @@ export const readingPreferencesSchema = z.object({
   focusMode: z.boolean(),
   sentenceGuide: z.boolean().default(false),
   readingGuide: z.boolean().default(false),
-  speechRate: z.number().min(0.75).max(1.25).default(0.9),
+  speechRate: z.number().min(0.5).max(2).default(1),
 }).strict();
 
 const arrangementSchema = z.object({

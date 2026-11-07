@@ -108,7 +108,7 @@ export const DEFAULT_READING_PREFERENCES: ReadingPreferences = {
   focusMode: false,
   sentenceGuide: false,
   readingGuide: false,
-  speechRate: 0.9,
+  speechRate: 1,
 };
 
 export type AdaptationMode = "plain-language" | "steps" | "terms";
