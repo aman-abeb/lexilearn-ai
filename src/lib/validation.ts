@@ -5,6 +5,11 @@ export const MAX_SOURCE_CHARACTERS = 100_000;
 export const MAX_LECTURE_CHARACTERS = 160_000;
 export const MAX_SOURCES = 12;
 
+export const notesQuestionSchema = z.object({
+  notes: z.string().max(100_000).refine(value => value.trim().length >= 30, "Add at least 30 characters of notes."),
+  prompt: z.string().trim().max(1000).default(""),
+}).strict();
+
 export const youtubeImportSchema = z.object({
   url: z.string().trim().max(2000).refine(value => !!parseYouTubeUrl(value), "Paste a valid YouTube video link, such as https://www.youtube.com/watch?v=… or https://youtu.be/…."),
 }).strict();
@@ -89,6 +94,82 @@ export const adaptationSchema = z.object({
   mode: z.enum(["plain-language", "steps", "terms"]),
 }).strict();
 
+export const adaptationOutputSchema = z.object({
+  text: z.string().trim().min(1).max(8_000),
+  sourceSectionIds: z.array(z.string().min(1).max(100)).min(1).max(4),
+  warnings: z.array(z.string().trim().min(1).max(500)).max(8),
+}).strict();
+
+export const emptyBodySchema = z.object({}).strict();
+
+export const lectureSummaryOutputSchema = z.object({
+  headline: z.string().trim().min(1).max(220),
+  takeaways: z.array(z.string().trim().min(1).max(400)).min(3).max(8),
+  inOneMinute: z.string().trim().min(1).max(1_200),
+  warnings: z.array(z.string().trim().min(1).max(500)).max(8),
+}).strict();
+
+export const lectureAnalysisOutputSchema = z.object({
+  mainIdeas: z.array(z.object({
+    title: z.string().trim().min(1).max(120),
+    explanation: z.string().trim().min(1).max(800),
+  }).strict()).min(2).max(8),
+  confusionPoints: z.array(z.object({
+    point: z.string().trim().min(1).max(160),
+    why: z.string().trim().min(1).max(500),
+  }).strict()).max(6),
+  connections: z.array(z.string().trim().min(1).max(400)).max(6),
+  reviewPlan: z.array(z.string().trim().min(1).max(400)).min(2).max(6),
+  warnings: z.array(z.string().trim().min(1).max(500)).max(8),
+}).strict();
+
+export const studyChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  text: z.string().trim().min(1).max(2_000),
+}).strict();
+
+export const studyChatSchema = z.object({
+  messages: z.array(studyChatMessageSchema).min(1).max(12),
+}).strict().superRefine((value, context) => {
+  if (value.messages.at(-1)?.role !== "user") {
+    context.addIssue({ code: "custom", path: ["messages"], message: "Send a question to continue this conversation." });
+  }
+});
+
+export const studyChatOutputSchema = z.object({
+  text: z.string().trim().min(1).max(4_000),
+  warnings: z.array(z.string().trim().min(1).max(500)).max(8),
+}).strict();
+
+export const practiceStartSchema = z.object({
+  sectionId: z.string().trim().min(1).max(100).optional(),
+}).strict();
+
+export const practiceHintSchema = z.object({
+  problemId: z.string().uuid(),
+}).strict();
+
+export const practiceCheckSchema = z.object({
+  problemId: z.string().uuid(),
+  answer: z.string().trim().min(1, "Write an attempt before checking it.").max(2_000),
+}).strict();
+
+export const practiceProblemOutputSchema = z.object({
+  prompt: z.string().trim().min(1).max(900),
+  concept: z.string().trim().min(1).max(80),
+  sectionId: z.string().trim().min(1).max(100),
+  hints: z.array(z.string().trim().min(1).max(400)).min(2).max(2),
+  expected: z.string().trim().min(1).max(1_200),
+  steps: z.array(z.string().trim().min(1).max(500)).min(2).max(5),
+  warnings: z.array(z.string().trim().min(1).max(500)).max(6),
+}).strict();
+
+export const practiceCheckOutputSchema = z.object({
+  verdict: z.enum(["on-track", "partly", "revisit"]),
+  feedback: z.string().trim().min(1).max(1_200),
+  warnings: z.array(z.string().trim().min(1).max(500)).max(6),
+}).strict();
+
 export const readingPreferencesSchema = z.object({
   fontSize: z.number().min(16).max(32),
   lineHeight: z.number().min(1.5).max(2.5),
@@ -102,6 +183,7 @@ export const readingPreferencesSchema = z.object({
   focusMode: z.boolean(),
   sentenceGuide: z.boolean().default(false),
   readingGuide: z.boolean().default(false),
+  readingWidth: z.enum(["narrow", "medium", "wide"]).default("medium"),
   speechRate: z.number().min(0.5).max(2).default(1),
 }).strict();
 

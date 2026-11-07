@@ -24,6 +24,9 @@ test("saved preferences gain a light appearance and stay inside the reader range
   assert.equal(legacy.wordSpacing, 0);
   assert.equal(legacy.paragraphSpacing, 1);
   assert.equal(legacy.readingGuide, false);
+  assert.equal(legacy.readingWidth, "medium");
+  assert.equal(safePreferences({ readingWidth: "narrow" }).readingWidth, "narrow");
+  assert.equal(safePreferences({ readingWidth: "stretch" }).readingWidth, "medium");
   const crowded = Array.from({ length: 10 }, (_, index) => ({ id: `row-${index}`, name: index === 3 ? "   " : `Setup ${index}`, preferences: { fontSize: 18 } }));
   const arrangements = safeArrangements(crowded);
   assert.equal(arrangements.length, 8);

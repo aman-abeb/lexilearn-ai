@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-type IconName = "book" | "sliders" | "plus" | "arrow" | "back" | "upload" | "volume" | "stop" | "check" | "focus" | "courses" | "file" | "slides" | "recording" | "sparkles" | "search" | "external" | "download" | "close" | "user" | "sun" | "moon";
+type IconName = "book" | "sliders" | "plus" | "arrow" | "back" | "upload" | "volume" | "stop" | "check" | "focus" | "courses" | "file" | "slides" | "recording" | "sparkles" | "search" | "external" | "download" | "close" | "user" | "sun" | "moon" | "mic" | "chat" | "list" | "practice";
 const paths: Record<IconName, string> = {
   book: "M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1m0-15c3-2 6-2 9-1v15c-3-1-6-1-9 1V5Z",
   sliders: "M4 7h5m4 0h7M4 17h9m4 0h3M9 4v6m4 4v6",
@@ -24,6 +24,10 @@ const paths: Record<IconName, string> = {
   user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0",
   sun: "M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M3 12h2M19 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0",
   moon: "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z",
+  mic: "M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Zm7 9a7 7 0 0 1-14 0M12 19v3",
+  chat: "M4 5h16v12H8l-4 4V5Z",
+  list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  practice: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z",
 };
 
 export function Icon({ name, size = 20, style }: { name: IconName; size?: number; style?: CSSProperties }) {
