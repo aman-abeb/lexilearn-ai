@@ -8,3 +8,5 @@ coverage/
 *.tsbuildinfo
 *.log
 .qa/
+.bundle/
+lexilearn-ai.zip

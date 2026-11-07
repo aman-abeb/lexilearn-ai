@@ -218,6 +218,7 @@ The included lecture is explicitly labelled **illustrative sample content**, not
 | `npm run typecheck` | Check TypeScript types without emitting files. |
 | `npm test` | Run the Node test suite through `tsx`. |
 | `npm run build` | Create the production build. |
+| `npm run bundle` | Write `lexilearn-ai.zip` from the tracked project files. |
 | `npm start` | Serve an existing production build on `127.0.0.1`. |
 
 ### Verify a change

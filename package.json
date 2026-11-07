@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
-    "bundle": "next build",
+    "bundle": "rm -rf .bundle lexilearn-ai.zip && mkdir -p .bundle/lexilearn-ai && git ls-files -z | xargs -0 cp --parents -t .bundle/lexilearn-ai && (cd .bundle && zip -qr ../lexilearn-ai.zip lexilearn-ai) && rm -rf .bundle",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"
