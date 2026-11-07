@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { audioChunks, SPEECH_RATES } from "@/lib/client/speech";
-import { OPENAI_VOICES } from "@/lib/speech";
+import { LEXI_VOICE } from "@/lib/speech";
 import { Icon } from "./icon";
 import { useReadingPreferences } from "./reading-preferences-provider";
 
@@ -13,7 +13,7 @@ export function ReadAloud({ text, label }: { text: string; label: string }) {
   const { preferences, updatePreferences, ready } = useReadingPreferences();
   const [playback, setPlayback] = useState<Playback>("idle");
   const [error, setError] = useState("");
-  const [voice, setVoice] = useState<(typeof OPENAI_VOICES)[number]>("marin");
+  const voice = LEXI_VOICE;
   const audio = useRef<HTMLAudioElement | null>(null);
   const request = useRef<AbortController | null>(null);
   const session = useRef(0);
@@ -70,7 +70,7 @@ export function ReadAloud({ text, label }: { text: string; label: string }) {
         }
         const blob = await response.blob();
         if (!active()) throw new DOMException("Playback cancelled", "AbortError");
-        if (!blob.size) throw new Error("OpenAI returned empty audio. Please try again.");
+        if (!blob.size) throw new Error("Lexi returned empty audio. Please try again.");
         const url = URL.createObjectURL(blob); urls.current.add(url);
         return url;
       })();
@@ -125,11 +125,7 @@ export function ReadAloud({ text, label }: { text: string; label: string }) {
           <button type="button" className="button button-ghost button-small" onClick={() => { cancel(); setPlayback("idle"); setError(""); }}><Icon name="stop" size={18} />{playback === "loading" ? "Cancel audio" : "Stop reading"}</button>
         </>}
       </div>
-      <div className="audio-speed audio-voice"><label htmlFor={`${id}-voice`}>Voice</label>
-        <select id={`${id}-voice`} className="text-input" disabled={!ready || playback !== "idle"} value={voice} onChange={event => setVoice(event.target.value as typeof voice)}>
-          {OPENAI_VOICES.map(item => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}{item === "marin" ? " · Recommended" : ""}</option>)}
-        </select>
-      </div>
+      <p className="audio-speed">Voice: Lexi</p>
       <div className="audio-speed"><label htmlFor={`${id}-speed`}>Speed</label>
         <select id={`${id}-speed`} className="text-input" disabled={!ready} value={preferences.speechRate} onChange={event => updatePreferences({ speechRate: Number(event.target.value) })}>
           {!SPEECH_RATES.some(value => value === preferences.speechRate) && <option value={preferences.speechRate}>{preferences.speechRate}×</option>}
@@ -137,7 +133,7 @@ export function ReadAloud({ text, label }: { text: string; label: string }) {
         </select>
       </div>
     </div>
-    <p className="field-help" role="status">{playback === "loading" ? "Generating your audio with OpenAI…" : playback === "paused" ? "Reading paused. Resume when you are ready." : playback === "speaking" ? "Reading aloud with OpenAI. You can change speed while listening." : "AI-generated voice by OpenAI. Skips timestamps, filler sounds, and stutters."}</p>
+    <p className="field-help" role="status">{playback === "loading" ? "Lexi is preparing the audio…" : playback === "paused" ? "Reading paused. Resume when you are ready." : playback === "speaking" ? "Lexi is reading aloud. You can change speed while listening." : "Lexi reads with Grok. Timestamps, filler sounds, and stutters are skipped."}</p>
     {error && <p className="notice" role="status">{error}</p>}
   </section>;
 }

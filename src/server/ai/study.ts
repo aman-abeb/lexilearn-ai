@@ -3,6 +3,7 @@ import type { LectureAnalysis, LectureSummary, Material, PracticeCheck, Practice
 import { lectureAnalysisOutputSchema, lectureSummaryOutputSchema, practiceCheckOutputSchema, practiceProblemOutputSchema, studyChatOutputSchema } from "../../lib/validation";
 import { readingMaterial } from "../../lib/lecture";
 import { HttpError } from "../http";
+import { languageModelConfig, languageModelExtras } from "./config";
 
 type Configuration = { apiKey?: string; model?: string; baseUrl?: string; fetch?: typeof fetch };
 
@@ -77,6 +78,7 @@ async function completeJson(configuration: Configuration, input: {
         model: configuration.model || "gpt-4.1-mini",
         response_format: { type: "json_object" },
         max_completion_tokens: input.maxTokens,
+        ...languageModelExtras(configuration.baseUrl),
         messages: [
           { role: "system", content: input.instructions },
           { role: "user", content: JSON.stringify(input.payload) },
@@ -86,6 +88,7 @@ async function completeJson(configuration: Configuration, input: {
   } catch {
     throw new HttpError(504, "STUDY_UNAVAILABLE", input.unavailable);
   }
+  if (response.status === 401) throw new HttpError(401, "AI_KEY_REJECTED", "The AI key was rejected. Check XAI_API_KEY or OPENAI_API_KEY in the server .env file, then restart the server.");
   if (!response.ok) throw new HttpError(502, "STUDY_UNAVAILABLE", input.unavailable);
   try {
     const body = await response.json();
@@ -332,8 +335,4 @@ Return JSON only: {"verdict":"on-track","feedback":"your feedback","warnings":["
   };
 }
 
-export const studyProvider = createStudyProvider({
-  apiKey: process.env.OPENAI_API_KEY,
-  model: process.env.OPENAI_MODEL,
-  baseUrl: process.env.OPENAI_BASE_URL,
-});
+export const studyProvider = createStudyProvider(languageModelConfig());

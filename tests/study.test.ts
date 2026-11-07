@@ -103,6 +103,18 @@ test("an oral exam reply stays with one section and answers what the student jus
   );
 });
 
+test("a rejected OpenAI key is reported instead of a generic failure", async () => {
+  const rejected = createStudyProvider({
+    apiKey: "test-only",
+    baseUrl: "https://api.openai.com/v1",
+    fetch: async () => Response.json({ error: { code: "invalid_api_key" } }, { status: 401 }),
+  });
+  await assert.rejects(
+    rejected.summarize(SAMPLE_MATERIAL),
+    (error: unknown) => error instanceof HttpError && error.status === 401 && error.code === "AI_KEY_REJECTED",
+  );
+});
+
 test("study tools reject incomplete model output and missing configuration", async () => {
   const unconfigured = createStudyProvider({});
   assert.equal(unconfigured.configured, false);

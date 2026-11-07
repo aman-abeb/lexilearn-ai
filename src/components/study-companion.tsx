@@ -50,7 +50,7 @@ export function StudyCompanion({ material, aiAvailable }: { material: Material; 
   const [speakReplies, setSpeakReplies] = useState(true);
   const [replyWarnings, setReplyWarnings] = useState<string[]>([]);
   const recognition = useRef<SpeechRecognitionLike | null>(null);
-  const spoken = useRef<SpeechSynthesisUtterance | null>(null);
+  const spoken = useRef<(() => void) | null>(null);
   const thread = useRef<HTMLDivElement>(null);
   const history = useRef<StudyChatMessage[]>([]);
   const busy = useRef(false);
@@ -60,10 +60,7 @@ export function StudyCompanion({ material, aiAvailable }: { material: Material; 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setSpeakReplies(false);
     return () => {
       recognition.current?.stop();
-      if (spoken.current && "speechSynthesis" in window) {
-        spoken.current.onend = null;
-        window.speechSynthesis.cancel();
-      }
+      spoken.current?.();
     };
   }, []);
 
@@ -72,19 +69,38 @@ export function StudyCompanion({ material, aiAvailable }: { material: Material; 
   }, [material.id, material.compilation?.generatedAt]);
 
   function cancelSpeech() {
-    if (spoken.current) { spoken.current.onend = null; spoken.current = null; }
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    spoken.current?.();
+    spoken.current = null;
   }
 
   function speak(text: string) {
-    if (!speakReplies || !("speechSynthesis" in window)) return;
+    if (!speakReplies) return;
     cancelSpeech();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en";
-    utterance.rate = preferences.speechRate;
-    spoken.current = utterance;
-    window.speechSynthesis.resume();
-    window.speechSynthesis.speak(utterance);
+    const controller = new AbortController();
+    let url = "";
+    let audio: HTMLAudioElement | null = null;
+    spoken.current = () => {
+      controller.abort();
+      if (audio) { audio.onended = null; audio.pause(); audio.removeAttribute("src"); audio.load(); }
+      if (url) URL.revokeObjectURL(url);
+    };
+    void (async () => {
+      try {
+        const response = await fetch("/api/speech", {
+          method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+          body: JSON.stringify({ input: text, voice: "lexi" }),
+        });
+        if (!response.ok || controller.signal.aborted) return;
+        const blob = await response.blob();
+        if (!blob.size || controller.signal.aborted) return;
+        url = URL.createObjectURL(blob);
+        audio = new Audio(url);
+        audio.preservesPitch = true;
+        audio.playbackRate = preferences.speechRate;
+        audio.onended = () => { if (url) URL.revokeObjectURL(url); spoken.current = null; };
+        await audio.play();
+      } catch { /* The written reply stays on the page when Lexi cannot speak. */ }
+    })();
   }
 
   async function loadSummary() {
@@ -221,7 +237,7 @@ export function StudyCompanion({ material, aiAvailable }: { material: Material; 
       <div className="conversation-thread" ref={thread} aria-live="polite">
         {messages.length === 0 ? <p className="field-help">Try “What is this lecture really about?” or “Explain overfitting in simpler words.”</p> : messages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`chat-bubble chat-${message.role}`}>
-            <span>{message.role === "user" ? "You" : "Study companion"}</span>
+            <span>{message.role === "user" ? "You" : "Lexi"}</span>
             <p>{message.text}</p>
           </div>
         ))}
@@ -244,7 +260,7 @@ export function StudyCompanion({ material, aiAvailable }: { material: Material; 
         </div>
       </form>
       {replyWarnings.length > 0 && <Warnings warnings={replyWarnings} />}
-      <p className="field-help">{speechSupported ? "Speaking uses your browser’s voice service. Chrome may send microphone audio to its speech service." : "This browser cannot capture speech. Type your question instead."}</p>
+      <p className="field-help">{speechSupported ? "The microphone uses your browser’s speech service. Chrome may send that audio to its speech service. Lexi speaks replies with Grok." : "This browser cannot capture speech. Type your question instead. Lexi can still speak the reply."}</p>
     </div>}
   </section>;
 }

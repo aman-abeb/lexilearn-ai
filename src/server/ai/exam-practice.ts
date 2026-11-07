@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Material, MaterialSection, MultipleChoiceResponse } from "../../lib/contracts";
 import { readingMaterial } from "../../lib/lecture";
 import { HttpError } from "../http";
+import { languageModelConfig, languageModelExtras } from "./config";
 import { SAMPLE_MATERIAL } from "../materials";
 
 type Configuration = { apiKey?: string; model?: string; baseUrl?: string; fetch?: typeof fetch };
@@ -86,10 +87,11 @@ export function createExamPracticeProvider(configuration: Configuration) {
         try {
           response = await (configuration.fetch ?? fetch)(`${(configuration.baseUrl || "https://api.openai.com/v1").replace(/\/$/, "")}/chat/completions`, {
             method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${configuration.apiKey}` }, signal: AbortSignal.timeout(50_000),
-            body: JSON.stringify({ model: configuration.model || "gpt-4.1-mini", response_format: { type: "json_object" }, max_completion_tokens: 4000, messages: [{ role: "system", content: instructions }, { role: "user", content: JSON.stringify({ title, questionPreferences: prompt, sections: sections.map(({ id, title, text }) => ({ id, title, text })) }) }, ...(attempt ? [{ role: "user", content: "The previous response could not be validated. Return only questions with exactly four distinct text options, a zero-based correctIndex, a supplied sectionId and a short exact continuous quote from that section." }] : [])] }),
+            body: JSON.stringify({ model: configuration.model || "gpt-4.1-mini", response_format: { type: "json_object" }, max_completion_tokens: 4000, ...languageModelExtras(configuration.baseUrl), messages: [{ role: "system", content: instructions }, { role: "user", content: JSON.stringify({ title, questionPreferences: prompt, sections: sections.map(({ id, title, text }) => ({ id, title, text })) }) }, ...(attempt ? [{ role: "user", content: "The previous response could not be validated. Return only questions with exactly four distinct text options, a zero-based correctIndex, a supplied sectionId and a short exact continuous quote from that section." }] : [])] }),
           });
         } catch { throw new HttpError(504, "QUESTION_GENERATION_UNAVAILABLE", "Questions could not be generated. Please try again."); }
-        if (!response.ok) throw new HttpError(502, "QUESTION_GENERATION_UNAVAILABLE", "The AI service could not create questions right now. Please try again.");
+        if (response.status === 401) throw new HttpError(401, "AI_KEY_REJECTED", "The AI key was rejected. Check XAI_API_KEY or OPENAI_API_KEY in the server .env file, then restart the server.");
+      if (!response.ok) throw new HttpError(502, "QUESTION_GENERATION_UNAVAILABLE", "The AI service could not create questions right now. Please try again.");
         let output: unknown;
         try {
           const body = await response.json();
@@ -115,4 +117,4 @@ export function createExamPracticeProvider(configuration: Configuration) {
   };
 }
 
-export const examPracticeProvider = createExamPracticeProvider({ apiKey: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL, baseUrl: process.env.OPENAI_BASE_URL });
+export const examPracticeProvider = createExamPracticeProvider(languageModelConfig());
