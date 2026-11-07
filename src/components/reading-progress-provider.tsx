@@ -10,6 +10,7 @@ type ProgressContextValue = {
   ready: boolean;
   storageAvailable: boolean;
   updateProgress: (material: Material, update: (current: ReadingProgress) => ReadingProgress) => void;
+  replaceProgress: (next: ReadingProgressStore) => void;
 };
 const ProgressContext = createContext<ProgressContextValue | null>(null);
 
@@ -43,7 +44,11 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
     }));
   }, [ready]);
 
-  return <ProgressContext.Provider value={{ progress, ready, storageAvailable, updateProgress }}>{children}</ProgressContext.Provider>;
+  const replaceProgress = useCallback((next: ReadingProgressStore) => {
+    setProgress(parseProgressStore(next));
+  }, []);
+
+  return <ProgressContext.Provider value={{ progress, ready, storageAvailable, updateProgress, replaceProgress }}>{children}</ProgressContext.Provider>;
 }
 
 export function useReadingProgress() {

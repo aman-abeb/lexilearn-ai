@@ -72,21 +72,42 @@ export type ReadingPreferences = {
   fontSize: number;
   lineHeight: number;
   letterSpacing: number;
-  fontFamily: "sans" | "serif";
-  theme: "paper" | "white" | "night";
+  /** Extra space between words, in em. */
+  wordSpacing: number;
+  /** Space after each paragraph, in em. */
+  paragraphSpacing: number;
+  fontFamily: "sans" | "serif" | "clear";
+  /** Stronger letter strokes. A presentation choice, not a treatment. */
+  fontWeight: "regular" | "bold";
+  theme: "paper" | "white" | "yellow" | "blue" | "night";
+  /** Light or dark chrome for the whole app. Page colour stays a separate choice. */
+  appearance: "light" | "dark";
   focusMode: boolean;
   sentenceGuide: boolean;
+  /** Dim other paragraphs while one is pointed at or focused. */
+  readingGuide: boolean;
   speechRate: number;
+};
+
+export type PreferenceArrangement = {
+  id: string;
+  name: string;
+  preferences: ReadingPreferences;
 };
 
 export const DEFAULT_READING_PREFERENCES: ReadingPreferences = {
   fontSize: 20,
   lineHeight: 1.9,
   letterSpacing: 0.02,
+  wordSpacing: 0,
+  paragraphSpacing: 1,
   fontFamily: "sans",
+  fontWeight: "regular",
   theme: "paper",
+  appearance: "light",
   focusMode: false,
   sentenceGuide: false,
+  readingGuide: false,
   speechRate: 0.9,
 };
 
@@ -102,6 +123,13 @@ export type AdaptationResult = {
   sourceSectionIds: string[];
   warnings: string[];
   generatedAt: string;
+};
+
+export type AccountUser = {
+  id: string;
+  email: string;
+  name: string;
+  picture: string | null;
 };
 
 export type ApiError = {

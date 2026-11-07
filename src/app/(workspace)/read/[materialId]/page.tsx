@@ -22,7 +22,7 @@ export default function ReaderPage() {
     return () => controller.abort();
   }, [materialId, attempt]);
 
-  if (error) return <><Link href="/" className="back-link"><Icon name="back" size={17} />Back to lectures</Link><div className="error-panel" role="alert"><h1>This lecture could not open</h1><p>{error}</p><button className="button button-secondary" onClick={() => setAttempt(value => value + 1)}>Try again</button></div></>;
+  if (error) return <><Link href="/dashboard" className="back-link"><Icon name="back" size={17} />Back to lectures</Link><div className="error-panel" role="alert"><h1>This lecture could not open</h1><p>{error}</p><button className="button button-secondary" onClick={() => setAttempt(value => value + 1)}>Try again</button></div></>;
   if (!data || data.material.id !== materialId) return <div className="loading-state" role="status">Opening your reading space…</div>;
   return <LectureWorkspace key={data.material.id} initialMaterial={data.material} compilationAvailable={!!data.compilationAvailable} />;
 }

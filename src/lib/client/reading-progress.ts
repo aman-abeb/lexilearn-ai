@@ -33,6 +33,19 @@ export function parseProgressStore(value: unknown): ReadingProgressStore {
   }));
 }
 
+/** Reject unbounded account payloads. Invalid entries inside the limit are dropped. */
+export function acceptProgressStore(value: unknown): ReadingProgressStore {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("Reading progress must be an object.");
+  }
+  const entries = Object.entries(value);
+  if (entries.length > 100) throw new TypeError("Reading progress is limited to 100 lectures.");
+  if (entries.some(([id]) => id.length < 1 || id.length > 100)) {
+    throw new TypeError("A lecture id in reading progress is too long.");
+  }
+  return parseProgressStore(value);
+}
+
 /** Drop stale references so stored progress can never open a missing section. */
 export function getMaterialProgress(material: Material, saved?: ReadingProgress): ReadingProgress {
   const progress = saved ?? progressSchema.parse({});

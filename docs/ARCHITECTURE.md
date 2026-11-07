@@ -113,6 +113,25 @@ The model returns an overview, sections, key terms, and source notes. Validation
 
 Source IDs and version timestamps allow `compilationIsCurrent()` to detect subsequent edits. An edit during compilation is retained and leaves the resulting notes visibly out of date. Compilation failure never replaces the old result.
 
+## Accounts
+
+Google sign-in is optional and shared by the web app and native mobile clients.
+
+1. The client obtains a Google ID token. On the web this is Google Identity Services. On iOS or Android it is the platform Google Sign-In SDK, using a client ID listed in `GOOGLE_CLIENT_ID` or `GOOGLE_MOBILE_CLIENT_IDS`.
+2. `POST /api/auth/google` with `{ "idToken": "..." }` verifies that token against Google's certificates. The account's email must be verified.
+3. The server upserts a `users` document in MongoDB and sets an httpOnly `lexilearn_session` cookie. A request with `X-LexiLearn-Client: mobile` also receives `token` in the JSON body. The web response does not include that bearer token.
+4. Later web requests send the cookie. Mobile requests send `Authorization: Bearer <token>`. `GET /api/auth/session` returns the account, preferences, arrangements, and progress.
+5. `PUT /api/account/preferences` and `PUT /api/account/progress` save changes. Progress is limited to 100 lectures.
+6. `POST /api/auth/sign-out` clears the cookie and increments that account's session version when the presented token is still current. Older tokens stop working, including on other devices.
+
+`MONGODB_URI` and `AUTH_SECRET` (32 characters or more) are required for these routes. Missing configuration returns HTTP 503 with `MONGODB_NOT_CONFIGURED` or `AUTH_NOT_CONFIGURED`. The reading interface keeps working from browser storage.
+
+The user document stores the Google subject, email, name, profile picture, preferences, arrangements, progress, and session version. Profile pictures are accepted only from `https` Google user-content hosts.
+
+## Reading preferences
+
+Preferences include `fontSize`, `lineHeight`, `letterSpacing`, `wordSpacing`, `paragraphSpacing`, `fontFamily` (`sans`, `serif`, or `clear`), `fontWeight`, `theme`, `appearance`, `focusMode`, `sentenceGuide`, `readingGuide`, and `speechRate`. `appearance` is `light` or `dark` for the whole app. `theme` is the reading-surface colour: `paper`, `white`, `yellow`, `blue`, or `night`. Named arrangements, up to 8, store a full snapshot and live beside the current settings in `lexilearn.reading-arrangements.v1`. The current settings stay in `lexilearn.reading-preferences.v1` so the pre-paint appearance script still finds `appearance`. Existing saved preferences receive defaults for new fields. Speed ranges from 0.75× to 1.25×, with a default of 0.9×. Signed-in students also have the current settings and arrangements stored on their account. Guests stay in the browser. Focus view hides global navigation while retaining Exit focus.
+
 The source composer can submit directly through the lecture-level Save/Create study notes buttons using native HTML form association. The current validated draft is appended once before saving, alongside previously added sources; empty extra editors are skipped. In-progress file imports disable saving with an explanatory message. Slide-like recording text is identified in the UI and compilation source notes, so extracted slides are not labelled as verified recording speech.
 
 ### Reserved adaptation
@@ -121,7 +140,7 @@ The source composer can submit directly through the lecture-level Save/Create st
 
 ## Browser state and reading
 
-`ReadingPreferencesProvider` restores size, spacing, typeface, page colour, sentence guide, focus mode, and speech speed before persisting defaults. Focus view hides global navigation while retaining Exit focus. Reading settings are collapsed by default.
+`ReadingPreferencesProvider` restores size, spacing, typeface, page colour, sentence guide, reading guide, focus mode, appearance, and speech speed before persisting defaults. Focus view hides global navigation while retaining Exit focus. Reading settings are collapsed by default. `src/lib/client/reading-progress.ts` validates saved data and filters missing or duplicated section references before display. Unavailable browser storage falls back to in-memory state for the current page session. A signed-in account copies preferences, arrangements, and progress to MongoDB. There is no cross-tab conflict resolution in this version: the latest saved account write wins.
 
 `ReadingProgressProvider` stores state under `lexilearn.reading-progress.v1`, keyed by lecture ID:
 
@@ -130,7 +149,7 @@ The source composer can submit directly through the lecture-level Save/Create st
 
 New compilations use fresh section IDs so old read markers are not applied to different content. Personal glossary entries retain original-source references; the interface can open the source when the old compiled section no longer exists. Existing glossary notes are enriched with source references before replacing the compilation in the active workspace.
 
-Sentence grouping uses English `Intl.Segmenter` without changing wording. Browser narration reads the displayed sentence/section or full notes, supports speed and pause/resume/stop, and cancels on passage changes or unmount. Blocked browser storage falls back to in-memory state. There is no account synchronization or cross-tab conflict resolution.
+Sentence grouping uses English `Intl.Segmenter` without changing wording. Browser narration reads the displayed sentence/section or full notes, supports speed and pause/resume/stop, and cancels on passage changes or unmount. Blocked browser storage falls back to in-memory state. Signed-in accounts sync preferences, arrangements, and progress. There is no cross-tab conflict resolution.
 
 ## Persistence
 

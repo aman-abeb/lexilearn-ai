@@ -94,7 +94,7 @@ export function NewLectureForm({ initialCourseId }: { initialCourseId?: string }
           {course && <div className="lecture-number-preview" role="status"><span className="lecture-number">{String(course.nextLectureNumber).padStart(2, "0")}</span><div><strong>Lecture {course.nextLectureNumber}</strong><p className="field-help">Numbered automatically within {course.code || course.name}.</p></div></div>}
           <div className="field"><label className="field-label" htmlFor="lecture-title">Lecture title</label><input id="lecture-title" className="text-input" value={title} onChange={event => setTitle(event.target.value)} required maxLength={120} placeholder="e.g. Memory and how we learn" /></div>
           {error && step === 1 && <div className="error-panel" role="alert">{error}</div>}
-          <div className="form-actions"><Link href="/" className="button button-ghost">Cancel</Link><button className="button button-primary" type="submit" disabled={addingCourse}>Continue to sources<Icon name="arrow" size={18} /></button></div>
+          <div className="form-actions"><Link href="/dashboard" className="button button-ghost">Cancel</Link><button className="button button-primary" type="submit" disabled={addingCourse}>Continue to sources<Icon name="arrow" size={18} /></button></div>
         </form>
         {addingCourse && <section className="inline-course-panel" aria-labelledby="inline-course-heading"><h3 id="inline-course-heading">Add a course</h3><CourseForm onSaved={course => { setCourses(current => [...current, course]); setCourseId(course.id); setAddingCourse(false); requestAnimationFrame(() => document.getElementById("lecture-course")?.focus()); }} onCancel={() => setAddingCourse(false)} /></section>}
       </section>

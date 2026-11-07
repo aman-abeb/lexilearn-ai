@@ -93,12 +93,34 @@ export const readingPreferencesSchema = z.object({
   fontSize: z.number().min(16).max(32),
   lineHeight: z.number().min(1.5).max(2.5),
   letterSpacing: z.number().min(0).max(0.12),
-  fontFamily: z.enum(["sans", "serif"]),
-  theme: z.enum(["paper", "white", "night"]),
+  wordSpacing: z.number().min(0).max(0.35).default(0),
+  paragraphSpacing: z.number().min(0.4).max(2).default(1),
+  fontFamily: z.enum(["sans", "serif", "clear"]),
+  fontWeight: z.enum(["regular", "bold"]).default("regular"),
+  theme: z.enum(["paper", "white", "yellow", "blue", "night"]),
+  appearance: z.enum(["light", "dark"]).default("light"),
   focusMode: z.boolean(),
   sentenceGuide: z.boolean().default(false),
+  readingGuide: z.boolean().default(false),
   speechRate: z.number().min(0.75).max(1.25).default(0.9),
 }).strict();
+
+const arrangementSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(1).max(40),
+  preferences: readingPreferencesSchema,
+});
+
+export const preferenceSetupSchema = readingPreferencesSchema.extend({
+  arrangements: z.array(arrangementSchema).max(8).default([]),
+  activeArrangementId: z.string().trim().min(1).max(80).nullable().default(null),
+}).strict();
+
+export const googleSignInSchema = z.object({
+  idToken: z.string().min(20).max(8192),
+}).strict();
+
+export const jsonObjectSchema = z.record(z.string(), z.unknown());
 
 export const storedMaterialsSchema = z.array(z.object({
   id: z.string(),

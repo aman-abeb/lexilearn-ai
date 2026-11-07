@@ -61,6 +61,12 @@ export async function readJson<T>(request: Request, schema: z.ZodType<T>, maxByt
   return result.data;
 }
 
+export function jsonNoStore(body: unknown, init?: { status?: number; cookie?: string }): Response {
+  const headers: Record<string, string> = { "Cache-Control": "no-store" };
+  if (init?.cookie) headers["Set-Cookie"] = init.cookie;
+  return Response.json(body, { status: init?.status, headers });
+}
+
 export function handleApiError(error: unknown): Response {
   if (error instanceof HttpError) return apiError(error.status, error.code, error.message);
   if (error instanceof Error && error.message === "MATERIAL_LIMIT_REACHED") {

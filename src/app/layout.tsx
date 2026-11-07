@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { AppShell } from "@/components/app-shell";
+import { AccountSync } from "@/components/account-sync";
+import { AuthProvider } from "@/components/auth-provider";
 import { ReadingPreferencesProvider } from "@/components/reading-preferences-provider";
 import { ReadingProgressProvider } from "@/components/reading-progress-provider";
 import "./globals.css";
+
+const appearanceScript = `(function(){try{var saved=localStorage.getItem("lexilearn.reading-preferences.v1");var appearance="light";if(saved){var value=JSON.parse(saved).appearance;if(value==="dark")appearance="dark";}document.documentElement.dataset.appearance=appearance;}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: { default: "LexiLearn AI — Your learning, your way", template: "%s | LexiLearn AI" },
@@ -11,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="en"><body><ReadingPreferencesProvider><ReadingProgressProvider><AppShell>{children}</AppShell></ReadingProgressProvider></ReadingPreferencesProvider></body></html>;
+  return <html lang="en" data-appearance="light" suppressHydrationWarning><body><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /><AuthProvider><ReadingPreferencesProvider><ReadingProgressProvider><AccountSync />{children}</ReadingProgressProvider></ReadingPreferencesProvider></AuthProvider></body></html>;
 }

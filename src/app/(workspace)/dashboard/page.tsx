@@ -1,5 +1,5 @@
 import { LectureLibrary } from "@/components/lecture-library";
 
-export default function HomePage() {
+export default function DashboardPage() {
   return <LectureLibrary />;
 }

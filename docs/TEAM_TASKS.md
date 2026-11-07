@@ -6,7 +6,7 @@ The application foundation is shared. Divide the next work into three areas so e
 
 Use student-selected preferences. Do not infer a diagnosis or promise that one font, color, or layout will suit everyone.
 
-**Current baseline:** Saved courses, atomic course-local lecture numbering, multi-source lecture setup, PDF/PPTX/text/caption extraction, and configurable whole-lecture AI compilation are implemented. The study workspace includes original-source links, a sentence guide, read/revisit markers, resume position, a personal glossary, narration controls, and text export. Read markers are student-selected rather than comprehension results. Automatic Webex access, audio transcription, selected-passage adaptation, quizzes, and account-synced progress remain follow-up work.
+**Current baseline:** Saved courses, atomic course-local lecture numbering, multi-source lecture setup, PDF/PPTX/text/caption extraction, and configurable whole-lecture AI compilation are implemented. The study workspace includes original-source links, a sentence guide, read/revisit markers, resume position, a personal glossary, narration controls, text export, and named reading arrangements. Guests keep preferences and progress in the browser. A Google account can store preferences, arrangements, and progress in MongoDB for the web app and a mobile client. Read markers are student-selected rather than comprehension results. Automatic Webex access, audio transcription, selected-passage adaptation, and quizzes remain follow-up work.
 
 ## Person 1 — Student interface and accessibility
 
