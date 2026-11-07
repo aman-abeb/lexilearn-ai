@@ -1,6 +1,7 @@
 import type { AdaptationMode, AdaptationResult, Material, MaterialSection } from "../../lib/contracts";
 import { adaptationOutputSchema } from "../../lib/validation";
 import { HttpError } from "../http";
+import { languageModelConfig, languageModelExtras } from "./config";
 
 /** Owner 3 implements this interface; API route and UI response shape remain stable. */
 export interface AdaptationProvider {
@@ -52,6 +53,7 @@ export function createAdaptationProvider(configuration: Configuration): Adaptati
           signal: AbortSignal.timeout(45_000),
           body: JSON.stringify({
             model, response_format: { type: "json_object" }, max_completion_tokens: 2_500,
+            ...languageModelExtras(configuration.baseUrl),
             messages: [
               { role: "system", content: `${instructions}\n\nFor this request: ${modeInstructions[mode]}` },
               { role: "user", content: JSON.stringify({
@@ -65,6 +67,7 @@ export function createAdaptationProvider(configuration: Configuration): Adaptati
       } catch {
         throw new HttpError(504, "ADAPTATION_UNAVAILABLE", "Section help could not finish. The original section is still here. Please try again.");
       }
+      if (response.status === 401) throw new HttpError(401, "AI_KEY_REJECTED", "The AI key was rejected. Check XAI_API_KEY or OPENAI_API_KEY in the server .env file, then restart the server.");
       if (!response.ok) throw new HttpError(502, "ADAPTATION_UNAVAILABLE", "Section help is unavailable right now. The original section is still here. Please try again.");
       let output: unknown;
       try {
@@ -89,8 +92,4 @@ export function createAdaptationProvider(configuration: Configuration): Adaptati
   };
 }
 
-export const adaptationProvider = createAdaptationProvider({
-  apiKey: process.env.OPENAI_API_KEY,
-  model: process.env.OPENAI_MODEL,
-  baseUrl: process.env.OPENAI_BASE_URL,
-});
+export const adaptationProvider = createAdaptationProvider(languageModelConfig());

@@ -7,7 +7,7 @@ import { Icon } from "@/components/icon";
 const modes = ["Read", "Listen", "Remember"] as const;
 const features = [
   { icon: "focus" as const, number: "01", title: "Find your reading rhythm.", text: "One section. One sentence. A little more breathing room. Make a dense lecture feel approachable, without losing the original words.", className: "read" },
-  { icon: "volume" as const, number: "02", title: "Let the words come to you.", text: "Switch to a natural OpenAI voice. Slow things down or pick up the pace, from 0.5× to 2×. Your place stays right here.", className: "listen" },
+  { icon: "volume" as const, number: "02", title: "Let the words come to you.", text: "Listen with Lexi, a Grok voice. Slow things down or pick up the pace, from 0.5× to 2×. Your place stays right here.", className: "listen" },
   { icon: "book" as const, number: "03", title: "Make understanding stick.", text: "Keep unfamiliar terms in your own words. Save a passage for later. Come back to a learning space that remembers where you left off.", className: "remember" },
 ];
 

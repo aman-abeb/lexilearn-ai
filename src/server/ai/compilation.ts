@@ -3,6 +3,7 @@ import type { CompiledNotes, Material } from "../../lib/contracts";
 import { compilationOutputSchema } from "../../lib/validation";
 import { looksLikeSlideText } from "../../lib/lecture";
 import { HttpError } from "../http";
+import { languageModelConfig, languageModelExtras } from "./config";
 
 type Configuration = { apiKey?: string; model?: string; baseUrl?: string; fetch?: typeof fetch };
 
@@ -31,6 +32,7 @@ export function createCompilationProvider(configuration: Configuration) {
           signal: AbortSignal.timeout(90_000),
           body: JSON.stringify({
             model, response_format: { type: "json_object" }, max_completion_tokens: 16_000,
+            ...languageModelExtras(configuration.baseUrl),
             messages: [
               { role: "system", content: instructions },
               { role: "user", content: JSON.stringify({ title: material.title, course: material.course, sources: readable.map(source => ({ id: source.id, kind: source.kind, name: source.name, text: source.text, transcript: source.transcript, warnings: sourceWarnings(source) })) }) },
@@ -40,6 +42,7 @@ export function createCompilationProvider(configuration: Configuration) {
       } catch {
         throw new HttpError(504, "COMPILATION_UNAVAILABLE", "The notes could not finish compiling. Your sources are saved. Please try again.");
       }
+      if (response.status === 401) throw new HttpError(401, "AI_KEY_REJECTED", "The AI key was rejected. Check XAI_API_KEY or OPENAI_API_KEY in the server .env file, then restart the server.");
       if (!response.ok) throw new HttpError(502, "COMPILATION_UNAVAILABLE", "The AI service could not compile this lecture right now. Your sources are saved. Please try again.");
       let output: unknown;
       try {
@@ -74,4 +77,4 @@ export function createCompilationProvider(configuration: Configuration) {
   };
 }
 
-export const compilationProvider = createCompilationProvider({ apiKey: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL, baseUrl: process.env.OPENAI_BASE_URL });
+export const compilationProvider = createCompilationProvider(languageModelConfig());

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { cleanTranscript } from "../src/lib/transcript";
 import { audioChunks, speechChunks, SPEECH_RATES } from "../src/lib/client/speech";
-import { MAX_SPEECH_CHARACTERS, OPENAI_VOICES } from "../src/lib/speech";
+import { LEXI_VOICE, MAX_SPEECH_CHARACTERS } from "../src/lib/speech";
 import { createSpeechProvider, speechInputSchema } from "../src/server/ai/speech";
 import { HttpError } from "../src/server/http";
 import { DEFAULT_READING_PREFERENCES } from "../src/lib/contracts";
@@ -48,7 +48,7 @@ test("long speech is split at sentences and words without dropping lecture conte
   assert.deepEqual(speechChunks("[00:06:52.200] Um, uh,"), []);
 });
 
-test("OpenAI passages preserve paragraphs and stay within the API input limit", () => {
+test("Lexi passages preserve paragraphs and stay within the API input limit", () => {
   const paragraph = "A score of 0.95 must not be mistaken for certainty. ".repeat(170).trim();
   const chunks = audioChunks(`[00:06:52.200] Uh, ${paragraph}\n\nSecond paragraph.`);
   assert.ok(chunks.length > 2);
@@ -73,40 +73,40 @@ test("all seven playback speeds survive browser storage and account sync", () =>
   assert.equal(safePreferences({ speechRate: 0.1 }).speechRate, 0.5);
 });
 
-test("speech requests accept only bounded text and supported OpenAI voices", () => {
-  assert.equal(speechInputSchema.parse({ input: "A lecture passage." }).voice, "marin");
-  for (const voice of OPENAI_VOICES) assert.equal(speechInputSchema.safeParse({ input: "Read this.", voice }).success, true);
+test("speech requests accept only bounded text for Lexi", () => {
+  assert.equal(speechInputSchema.parse({ input: "A lecture passage." }).voice, LEXI_VOICE);
+  assert.equal(speechInputSchema.safeParse({ input: "Read this.", voice: LEXI_VOICE }).success, true);
   for (const input of [
     { input: " " }, { input: "x".repeat(MAX_SPEECH_CHARACTERS + 1) },
+    { input: "Read this.", voice: "marin" },
     { input: "Read this.", voice: "untrusted-custom-voice" },
     { input: "Read this.", apiKey: "client-supplied-key" },
   ]) assert.equal(speechInputSchema.safeParse(input).success, false);
 });
 
-test("speech uses a server-only OpenAI key, cleans narration, and streams private MP3 audio", async () => {
+test("speech uses a server-only Grok key, cleans narration, and streams private MP3 audio", async () => {
   let sent: Record<string, unknown> = {};
   const provider = createSpeechProvider({ apiKey: "test-secret", fetch: async (url, options) => {
-    assert.equal(url, "https://api.openai.com/v1/audio/speech");
+    assert.equal(url, "https://api.x.ai/v1/tts");
     assert.equal(new Headers(options?.headers).get("authorization"), "Bearer test-secret");
     sent = JSON.parse(options?.body as string);
     return new Response(new Uint8Array([73, 68, 51, 1]), { headers: { "Content-Type": "audio/mpeg" } });
   } });
-  const response = await provider.synthesize({ input: "[00:06:52.200] Uh, and- and education matters.", voice: "marin" });
-  assert.equal(sent.model, "gpt-4o-mini-tts");
-  assert.equal(sent.voice, "marin");
-  assert.equal(sent.input, "and education matters.");
-  assert.equal(sent.response_format, "mp3");
-  assert.match(String(sent.instructions), /naturally/);
+  const response = await provider.synthesize({ input: "[00:06:52.200] Uh, and- and education matters.", voice: "lexi" });
+  assert.equal(sent.voice_id, "luna");
+  assert.equal(sent.language, "en");
+  assert.equal(sent.text, "and education matters.");
+  assert.deepEqual(sent.output_format, { codec: "mp3" });
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(response.headers.get("content-type"), "audio/mpeg");
   assert.deepEqual(new Uint8Array(await response.arrayBuffer()), new Uint8Array([73, 68, 51, 1]));
 });
 
 test("speech handles missing keys, empty narration, provider limits, and invalid audio without exposing upstream data", async () => {
-  const input = { input: "A lecture passage.", voice: "cedar" as const };
+  const input = { input: "A lecture passage.", voice: "lexi" as const };
   await assert.rejects(createSpeechProvider({}).synthesize(input), (error: unknown) => error instanceof HttpError && error.code === "SPEECH_NOT_CONFIGURED");
   await assert.rejects(createSpeechProvider({ apiKey: "test" }).synthesize({ ...input, input: "[00:00:01] Um, uh," }), (error: unknown) => error instanceof HttpError && error.code === "EMPTY_SPEECH");
-  for (const [status, expected] of [[429, "SPEECH_RATE_LIMITED"], [401, "SPEECH_UNAVAILABLE"], [500, "SPEECH_UNAVAILABLE"]] as const) {
+  for (const [status, expected] of [[429, "SPEECH_RATE_LIMITED"], [401, "AI_KEY_REJECTED"], [500, "SPEECH_UNAVAILABLE"]] as const) {
     const provider = createSpeechProvider({ apiKey: "test-secret", fetch: async () => new Response("private provider details", { status }) });
     await assert.rejects(provider.synthesize(input), (error: unknown) => error instanceof HttpError && error.code === expected && !error.message.includes("private provider details"));
   }

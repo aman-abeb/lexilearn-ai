@@ -42,7 +42,7 @@ export function ExamVoice({
   const [speakReplies, setSpeakReplies] = useState(true);
   const [warnings, setWarnings] = useState<string[]>([]);
   const recognition = useRef<SpeechRecognitionLike | null>(null);
-  const spoken = useRef<SpeechSynthesisUtterance | null>(null);
+  const spoken = useRef<(() => void) | null>(null);
   const thread = useRef<HTMLDivElement>(null);
   const history = useRef<StudyChatMessage[]>([]);
   const busy = useRef(false);
@@ -52,27 +52,43 @@ export function ExamVoice({
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setSpeakReplies(false);
     return () => {
       recognition.current?.stop();
-      if (spoken.current && "speechSynthesis" in window) {
-        spoken.current.onend = null;
-        window.speechSynthesis.cancel();
-      }
+      spoken.current?.();
     };
   }, []);
 
   function cancelSpeech() {
-    if (spoken.current) { spoken.current.onend = null; spoken.current = null; }
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    spoken.current?.();
+    spoken.current = null;
   }
 
   function speak(text: string) {
-    if (!speakReplies || !("speechSynthesis" in window)) return;
+    if (!speakReplies) return;
     cancelSpeech();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en";
-    utterance.rate = preferences.speechRate;
-    spoken.current = utterance;
-    window.speechSynthesis.resume();
-    window.speechSynthesis.speak(utterance);
+    const controller = new AbortController();
+    let url = "";
+    let audio: HTMLAudioElement | null = null;
+    spoken.current = () => {
+      controller.abort();
+      if (audio) { audio.onended = null; audio.pause(); audio.removeAttribute("src"); audio.load(); }
+      if (url) URL.revokeObjectURL(url);
+    };
+    void (async () => {
+      try {
+        const response = await fetch("/api/speech", {
+          method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+          body: JSON.stringify({ input: text, voice: "lexi" }),
+        });
+        if (!response.ok || controller.signal.aborted) return;
+        const blob = await response.blob();
+        if (!blob.size || controller.signal.aborted) return;
+        url = URL.createObjectURL(blob);
+        audio = new Audio(url);
+        audio.preservesPitch = true;
+        audio.playbackRate = preferences.speechRate;
+        audio.onended = () => { if (url) URL.revokeObjectURL(url); spoken.current = null; };
+        await audio.play();
+      } catch { /* The written reply stays on the page when Lexi cannot speak. */ }
+    })();
   }
 
   async function send(text = draft) {
@@ -149,7 +165,7 @@ export function ExamVoice({
         ? <p className="field-help">Press Speak and explain this idea in your own words.</p>
         : messages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`chat-bubble chat-${message.role}`}>
-            <span>{message.role === "user" ? "You" : "Oral coach"}</span>
+            <span>{message.role === "user" ? "You" : "Lexi"}</span>
             <p>{message.text}</p>
           </div>
         ))}
@@ -174,6 +190,6 @@ export function ExamVoice({
       </div>
     </form>
     {warnings.length > 0 && <div className="section-help-warnings"><p>Check this</p><ul>{warnings.map(warning => <li key={warning}>{warning}</li>)}</ul></div>}
-    <p className="field-help">{speechSupported ? "Speaking uses your browser’s voice service. Chrome may send microphone audio to its speech service. The reply uses the configured AI and this section of the lecture." : "This browser cannot capture speech. Type your answer instead."}</p>
+    <p className="field-help">{speechSupported ? "The microphone uses your browser’s speech service. Chrome may send that audio to its speech service. Lexi replies from this section and can speak with Grok." : "This browser cannot capture speech. Type your answer instead. Lexi can still speak the reply."}</p>
   </div>;
 }
