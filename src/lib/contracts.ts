@@ -139,6 +139,15 @@ export type ApiError = {
 export type MaterialListResponse = { materials: Material[] };
 export type MaterialResponse = { material: Material; compilationAvailable?: boolean };
 export type AdaptationResponse = { adaptation: AdaptationResult };
+export type MultipleChoiceQuestion = {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  sectionId: string;
+  evidence: string;
+};
+export type MultipleChoiceResponse = { questions: MultipleChoiceQuestion[]; origin: "sample" | "ai" };
 export type CourseListResponse = { courses: CourseSummary[]; compilationAvailable: boolean };
 export type CourseResponse = { course: CourseSummary };
 export type ExtractedSourceResponse = { name: string; text: string; warnings: string[] };

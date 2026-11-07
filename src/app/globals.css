@@ -590,3 +590,23 @@ fieldset.preference-control { border-top: 0; border-left: 0; border-right: 0; pa
 @media (max-width: 700px) {
   [data-appearance="dark"] .sidebar { border-bottom-color: #2c3b34; }
 }
+
+.exam-workspace { max-width: 880px; }
+.exam-setup { margin-bottom: 28px; }
+.exam-modes, .exam-options { border: 0; padding: 0; margin: 0; min-width: 0; }
+.exam-modes legend { margin-bottom: 10px; }
+.exam-practice { padding: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.exam-paper { min-height: 0; }
+.exam-quote { margin: 20px 0; padding: 0 0 0 18px; border-left: 3px solid currentColor; }
+.exam-options { display: grid; gap: 12px; }
+.exam-options legend { margin-bottom: 12px; font-weight: 700; }
+.exam-option { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+.exam-option input { flex-shrink: 0; width: 20px; height: 20px; margin: 8px 0 0; accent-color: var(--green); }
+.exam-answer { margin-top: 22px; }
+.exam-reference { padding: 24px; border: 1px solid var(--line); border-radius: 12px; margin-top: 20px; overflow-wrap: anywhere; }
+.exam-reference .reading-sample { white-space: pre-wrap; }
+.exam-check { margin-top: 20px; }
+@media (max-width: 700px) {
+  .exam-practice { padding: 20px; }
+  .exam-modes .view-switch { display: flex; }
+}

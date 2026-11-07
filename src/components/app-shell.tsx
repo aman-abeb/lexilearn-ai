@@ -15,9 +15,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isPreferences = pathname.startsWith("/preferences");
   const isCourses = pathname.startsWith("/courses");
   const isAccount = pathname.startsWith("/account");
+  const isExam = pathname.startsWith("/exam-preparation");
   const isReader = pathname.startsWith("/read/");
-  const isLectures = !isPreferences && !isCourses && !isAccount;
-  const label = isReader ? "Your reading space" : isCourses ? "Your subjects, organized" : isPreferences ? "Comfort is personal" : isAccount ? "Your account" : "Your learning, your way";
+  const isLectures = !isPreferences && !isCourses && !isAccount && !isExam;
+  const label = isReader ? "Your reading space" : isExam ? "Practice at your own pace" : isCourses ? "Your subjects, organized" : isPreferences ? "Comfort is personal" : isAccount ? "Your account" : "Your learning, your way";
   return <div className={`app-shell ${isReader && preferences.focusMode ? "shell-focus" : ""}`}>
     <a href="#main-content" className="skip-link">Skip to main content</a>
     <aside className="sidebar">
@@ -25,6 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav aria-label="Main navigation">
         <Link href="/dashboard" className={`nav-link ${isLectures ? "active" : ""}`} aria-current={pathname === "/dashboard" ? "page" : undefined}><Icon name="book" />My lectures</Link>
         <Link href="/courses" className={`nav-link ${isCourses ? "active" : ""}`} aria-current={isCourses ? "page" : undefined}><Icon name="courses" />My courses</Link>
+        <Link href="/exam-preparation" className={`nav-link ${isExam ? "active" : ""}`} aria-current={isExam ? "page" : undefined}><Icon name="check" />Exam preparation</Link>
         <Link href="/preferences" className={`nav-link ${isPreferences ? "active" : ""}`} aria-current={isPreferences ? "page" : undefined}><Icon name="sliders" />Reading preferences</Link>
         <Link href={user ? "/account" : "/auth"} className={`nav-link ${isAccount ? "active" : ""}`} aria-current={isAccount ? "page" : undefined}><Icon name="user" />{user ? "Account" : "Sign in"}</Link>
       </nav>
