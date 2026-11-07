@@ -1,0 +1,134 @@
+{
+  "nodes": [
+    {
+      "id": "course-sample-computer-science",
+      "type": "Course",
+      "label": "Introduction to machine learning"
+    },
+    {
+      "id": "sample-machine-learning",
+      "type": "Lecture",
+      "label": "An introduction to machine learning"
+    },
+    {
+      "id": "sample-lecture-notes",
+      "type": "Source",
+      "label": "Illustrative sample notes"
+    },
+    {
+      "id": "concept:machine learning",
+      "type": "Concept",
+      "label": "machine learning"
+    },
+    {
+      "id": "concept:model",
+      "type": "Concept",
+      "label": "model"
+    },
+    {
+      "id": "concept:supervised learning",
+      "type": "Concept",
+      "label": "supervised learning"
+    },
+    {
+      "id": "concept:classification",
+      "type": "Concept",
+      "label": "classification"
+    },
+    {
+      "id": "concept:regression",
+      "type": "Concept",
+      "label": "regression"
+    },
+    {
+      "id": "concept:overfitting",
+      "type": "Concept",
+      "label": "overfitting"
+    },
+    {
+      "id": "concept:accuracy",
+      "type": "Concept",
+      "label": "accuracy"
+    }
+  ],
+  "edges": [
+    {
+      "from": "course-sample-computer-science",
+      "to": "sample-machine-learning",
+      "relation": "contains",
+      "addedBy": "lecture metadata",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-machine-learning",
+      "to": "sample-lecture-notes",
+      "relation": "uses",
+      "addedBy": "lecture metadata",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-lecture-notes",
+      "to": "concept:machine learning",
+      "relation": "mentions",
+      "sourceId": "sample-lecture-notes",
+      "quote": "Machine learning is a way of finding patterns in examples.",
+      "addedBy": "illustrative sample vocabulary",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-lecture-notes",
+      "to": "concept:model",
+      "relation": "mentions",
+      "sourceId": "sample-lecture-notes",
+      "quote": "Instead of writing every rule by hand, we use data to train a model.",
+      "addedBy": "illustrative sample vocabulary",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-lecture-notes",
+      "to": "concept:supervised learning",
+      "relation": "mentions",
+      "sourceId": "sample-lecture-notes",
+      "quote": "In supervised learning, each training example includes an input and a known answer called a label.",
+      "addedBy": "illustrative sample vocabulary",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-lecture-notes",
+      "to": "concept:classification",
+      "relation": "mentions",
+      "sourceId": "sample-lecture-notes",
+      "quote": "Classification means predicting a category, while regression means predicting a numerical value.",
+      "addedBy": "illustrative sample vocabulary",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-lecture-notes",
+      "to": "concept:regression",
+      "relation": "mentions",
+      "sourceId": "sample-lecture-notes",
+      "quote": "Classification means predicting a category, while regression means predicting a numerical value.",
+      "addedBy": "illustrative sample vocabulary",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-lecture-notes",
+      "to": "concept:overfitting",
+      "relation": "mentions",
+      "sourceId": "sample-lecture-notes",
+      "quote": "If the model memorizes the training examples but performs poorly on new ones, this is called overfitting.",
+      "addedBy": "illustrative sample vocabulary",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    },
+    {
+      "from": "sample-lecture-notes",
+      "to": "concept:accuracy",
+      "relation": "mentions",
+      "sourceId": "sample-lecture-notes",
+      "quote": "Accuracy is the fraction of predictions that are correct.",
+      "addedBy": "illustrative sample vocabulary",
+      "recordedAt": "2026-11-07T00:00:00.000Z"
+    }
+  ],
+  "warnings": []
+}

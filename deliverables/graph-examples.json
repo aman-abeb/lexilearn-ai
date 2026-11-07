@@ -1,0 +1,39 @@
+[
+  {
+    "question": "Where is overfitting mentioned?",
+    "answer": "“overfitting” appears in 1 original source. The evidence below shows exactly what the sources say.",
+    "paths": [
+      {
+        "labels": [
+          "Introduction to machine learning",
+          "An introduction to machine learning",
+          "Illustrative sample notes",
+          "overfitting"
+        ],
+        "sourceId": "sample-lecture-notes",
+        "quote": "If the model memorizes the training examples but performs poorly on new ones, this is called overfitting."
+      }
+    ]
+  },
+  {
+    "question": "Where is accuracy mentioned?",
+    "answer": "“accuracy” appears in 1 original source. The evidence below shows exactly what the sources say.",
+    "paths": [
+      {
+        "labels": [
+          "Introduction to machine learning",
+          "An introduction to machine learning",
+          "Illustrative sample notes",
+          "accuracy"
+        ],
+        "sourceId": "sample-lecture-notes",
+        "quote": "Accuracy is the fraction of predictions that are correct."
+      }
+    ]
+  },
+  {
+    "question": "What prerequisite comes before overfitting?",
+    "answer": "This graph does not contain that information. It records which original sources mention a concept, not prerequisites, grading criteria, or student mastery.",
+    "paths": []
+  }
+]
