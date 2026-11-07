@@ -8,10 +8,10 @@ export const maxDuration = 120;
 
 export async function POST(request: Request, { params }: { params: Promise<{ materialId: string }> }) {
   try {
-    await readJson(request, z.object({}).strict());
+    const { prompt } = await readJson(request, z.object({ prompt: z.string().trim().max(1000).default("") }).strict());
     const { materialId } = await params;
     const material = await materialStore.find(materialId);
     if (!material) return apiError(404, "MATERIAL_NOT_FOUND", "This lecture could not be found.");
-    return jsonNoStore(await examPracticeProvider.generate(material));
+    return jsonNoStore(await examPracticeProvider.generate(material, prompt));
   } catch (error) { return handleApiError(error); }
 }
