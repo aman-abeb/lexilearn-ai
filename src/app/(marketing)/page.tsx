@@ -11,7 +11,7 @@ const features = [
     image: "/landing/listen.jpg",
     alt: "A student wears headphones and reads an open book, with soft sound waves beside the page.",
     title: "Hear it at your pace",
-    text: "Read-aloud uses your browser voice. Choose a slower or steadier speed, then pause, resume, or stop. The words stay on the page while you listen.",
+    text: "Listen with a natural AI-generated voice from OpenAI. Choose your voice and a speed from 0.5× to 2×, then pause, resume, or stop. The words stay on the page while you listen.",
   },
   {
     image: "/landing/glossary.jpg",

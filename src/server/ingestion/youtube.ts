@@ -8,6 +8,7 @@ import {
 import type { CaptionLanguage, YouTubeImportResponse } from "../../lib/contracts";
 import { MAX_SOURCE_CHARACTERS } from "../../lib/validation";
 import { parseYouTubeUrl } from "../../lib/youtube";
+import { cleanTranscript } from "../../lib/transcript";
 import { HttpError } from "../http";
 
 const UPSTREAM_HOSTS = new Set(["www.youtube.com", "youtube.com", "m.youtube.com", "video.google.com"]);
@@ -54,12 +55,7 @@ function decodeCaptionText(text: string): string {
   return decoded.replace(/<\/?(?:i|b|u|c|v|lang)(?:[ .][^>]*)?>/gi, "").replace(/\s+/g, " ").trim();
 }
 
-function timestamp(seconds: number): string {
-  const milliseconds = Math.round(seconds * 1000);
-  return `${String(Math.floor(milliseconds / 3_600_000)).padStart(2, "0")}:${String(Math.floor(milliseconds / 60_000) % 60).padStart(2, "0")}:${String(Math.floor(milliseconds / 1000) % 60).padStart(2, "0")}.${String(milliseconds % 1000).padStart(3, "0")}`;
-}
-
-/** Short timestamped passages retain all cues without turning every caption line into a section. */
+/** Clean reading text; the VTT download retains the original words and timing. */
 export function formatYouTubeCaptions(cues: TranscriptSegment[]): { text: string; captionsVtt: string; cueCount: number } {
   if (!cues.length || cues.some(cue => typeof cue.text !== "string" || !Number.isFinite(cue.offset) || !Number.isFinite(cue.duration) || cue.offset < 0 || cue.duration < 0)) {
     throw new HttpError(502, "YOUTUBE_INVALID_CAPTIONS", "YouTube returned unreadable captions. Retry or import a transcript file.");
@@ -71,14 +67,14 @@ export function formatYouTubeCaptions(cues: TranscriptSegment[]): { text: string
   let length = 0;
   for (const cue of segments) {
     if (words.length && (cue.offset - start >= 30 || length + cue.text.length > 600)) {
-      paragraphs.push(`[${timestamp(start)}] ${words.join(" ")}`); words = []; length = 0;
+      paragraphs.push(words.join(" ")); words = []; length = 0;
     }
     if (!words.length) start = cue.offset;
     words.push(cue.text); length += cue.text.length + 1;
   }
-  if (words.length) paragraphs.push(`[${timestamp(start)}] ${words.join(" ")}`);
-  const text = paragraphs.join("\n\n");
-  if (segments.map(cue => cue.text).join(" ").trim().length < 10) throw new HttpError(422, "YOUTUBE_NO_CAPTIONS", "This video has too little readable caption text. Add another source or import a transcript.");
+  if (words.length) paragraphs.push(words.join(" "));
+  const text = cleanTranscript(paragraphs.join("\n\n"));
+  if (text.length < 10) throw new HttpError(422, "YOUTUBE_NO_CAPTIONS", "This video has too little readable caption text. Add another source or import a transcript.");
   if (text.length > MAX_SOURCE_CHARACTERS) throw new HttpError(413, "YOUTUBE_TRANSCRIPT_TOO_LONG", "This transcript exceeds 100,000 characters. Import a shorter lecture segment instead.");
   const escaped = segments.map(cue => ({ ...cue, text: cue.text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") }));
   return { text, captionsVtt: toVTT(escaped), cueCount: segments.length };

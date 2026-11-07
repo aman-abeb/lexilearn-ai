@@ -10,10 +10,11 @@
 - **Automatic lecture numbers:** Lectures are numbered sequentially within each course, starting from 1. Numbers are assigned when saving, including simultaneous imports.
 - **Two-step lecture setup:** Choose the course and title, then enter the lecture sources. Save & open lecture includes the source currently being edited; Add source is optional when collecting several inputs. Keep adding sources to the same lecture later.
 - **Notes and slides:** Paste content or import TXT, MD, PDF, and PPTX files. Review the extracted text before adding it. PPTX extraction includes speaker notes.
-- **YouTube videos:** Paste a YouTube link under Recording. Available published or automatic captions are imported into a timestamped transcript, ready for Create study notes. Captions can also be downloaded as VTT.
+- **YouTube videos:** Paste a YouTube link under Recording. Available published or automatic captions are imported as clean text without timestamps, filler sounds, or transcribed stutters, ready for Create study notes. Original caption words and timing can also be downloaded as VTT.
 - **Other recordings:** Keep a Webex or university recording link with the lecture. Paste a transcript or import TXT, VTT, or SRT captions. A recording can be saved first and its transcript added later.
 - **AI compilation:** With a server-side provider key, combine the available source text into topic-based full study notes, a brief overview, and key terms. Each section links back to the original sources. Recompile when sources change.
 - **Comfortable reading:** One section or sentence at a time, a full-notes view, adjustable size and spacing, typeface, page colour, a reading guide, named arrangements, light or dark appearance, and a focus view that hides navigation.
+- **Section help:** On a single section, ask for a plain-language explanation, a breakdown into steps, or the terms in that section. Each reply is labelled as generated, keeps its warnings, and links back to the original sources. The section itself stays on the page if the request fails.
 - **Optional narration:** Choose a speed, pause, resume, or stop. Changing the passage stops narration.
 - **Personal study tools:** Resume the last section, explicitly mark sections as read, save passages to revisit, and maintain a personal glossary. Personal definitions keep their original-source links when compiled notes are regenerated.
 - **Exam preparation:** Practice a lecture with written or oral self-review, or multiple-choice questions with answers and supporting passages. Paste specific notes or drop a TXT, MD, PDF, or PPTX file to create multiple-choice questions, and optionally request a topic, difficulty, or style. Imported exam notes are not added to the library. The included sample has ready-made questions; generating questions from other notes or with custom preferences requires the AI key and sends the notes and preferences to the configured provider. AI questions can contain mistakes, so check the passage. Practice is session-only; written and oral responses are not AI-graded.
@@ -57,7 +58,11 @@ YouTube video links automatically import available captions. Review the transcri
 
 A saved recording URL is a reference, **not a transcript**. Private Webex recordings and UniMiB Moodle/Kaltura lecture pages usually require university sign-in. This version does not sign in to these services, download arbitrary recording URLs, or transcribe audio automatically. The recording form explains this for UniMiB links and identifies slide-like text when it is supplied in place of a transcript.
 
-To include the spoken lecture, export its transcript/captions and import the TXT, VTT, or SRT file. Use **Sources → Add transcript** on a saved recording, then compile the updated lecture. Timestamp labels remain in imported captions. Links without transcripts are explicitly listed as not included in the compiled content.
+To include the spoken lecture, export its transcript/captions and import the TXT, VTT, or SRT file. Use **Sources → Add transcript** on a saved recording, then compile the updated lecture. VTT and SRT imports remove timestamp labels and filler sounds. Links without transcripts are explicitly listed as not included in the compiled content.
+
+Read aloud cleans existing transcript text, then generates natural speech with OpenAI using the server's `OPENAI_API_KEY` from `.env`. It uses `gpt-4o-mini-tts` independently of the notes model, with Marin selected by default and Cedar, Coral, Sage, Nova, and Alloy also available. Long passages are divided at sentence boundaries, with the next passage prepared while the current one plays. Speeds are **0.5×, 0.75×, 1×, 1.25×, 1.5×, 1.75×, and 2×**, with **1×** as the default. Change speed while listening; stop to change voices. Pause, resume, and cancel work during playback or audio generation. The key stays on the server; the browser receives MP3 audio. Audio is not stored on the server and is released from browser memory after use.
+
+Optional speech settings: `OPENAI_TTS_MODEL` and `OPENAI_TTS_BASE_URL`. OpenAI currently supports this Speech API model but has announced shutdown on January 6, 2027; a future upgrade to its Realtime API will be needed. See the [OpenAI speech guide](https://developers.openai.com/api/docs/guides/text-to-speech).
 
 ## Try the flow
 
@@ -140,8 +145,9 @@ The application uses **Next.js App Router, React, TypeScript, Zod, and Node.js r
 | `POST` | `/api/materials/:id/exam-questions` | Create multiple-choice questions from the lecture's readable sections |
 | `POST` | `/api/exam-questions` | Create multiple-choice questions from supplied notes and optional preferences |
 | `POST` | `/api/sources/extract` | Extract an uploaded file into reviewable text |
-| `POST` | `/api/sources/youtube` | Retrieve YouTube captions and a timestamped transcript |
-| `POST` | `/api/materials/:id/adapt` | Future selected-section adaptation; currently HTTP 501 |
+| `POST` | `/api/sources/youtube` | Retrieve original timed captions and a clean transcript |
+| `POST` | `/api/speech` | Generate OpenAI MP3 narration for a bounded passage |
+| `POST` | `/api/materials/:id/adapt` | Explain the current section in plain language, steps, or terms |
 
 See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 
@@ -161,7 +167,7 @@ See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 ## Next milestones
 
 1. Authorized Webex integration and audio transcription, so a recording link can supply its spoken content directly.
-2. Source-grounded clarification of a selected passage and short comprehension checks.
+2. Short source-grounded comprehension checks. Selected-section explanations are available when the AI key is set.
 3. Review of compiled notes against a real lecture, including definitions, exceptions, equations, and extraction gaps.
 4. Feedback from dyslexic students, followed by durable storage and account-synced study progress.
 

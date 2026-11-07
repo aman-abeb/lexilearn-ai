@@ -1,4 +1,5 @@
 import type { AdaptationResponse } from "@/lib/contracts";
+import { readingMaterial } from "@/lib/lecture";
 import { adaptationSchema } from "@/lib/validation";
 import { adaptationProvider } from "@/server/ai/provider";
 import { apiError, handleApiError, readJson } from "@/server/http";
@@ -13,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
     const { materialId } = await params;
     const material = await materialStore.find(materialId);
     if (!material) return apiError(404, "MATERIAL_NOT_FOUND", "This material could not be found.");
-    const section = material.sections.find((item) => item.id === input.sectionId);
+    const section = readingMaterial(material).sections.find((item) => item.id === input.sectionId);
     if (!section) return apiError(404, "SECTION_NOT_FOUND", "This source section could not be found.");
     const adaptation = await adaptationProvider.adapt({ material, section, mode: input.mode });
     return Response.json({ adaptation } satisfies AdaptationResponse);

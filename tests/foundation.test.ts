@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { createMaterialSchema } from "../src/lib/validation";
-import { adaptationProvider } from "../src/server/ai/provider";
+import { createAdaptationProvider } from "../src/server/ai/provider";
 import { HttpError, readJson } from "../src/server/http";
 import { createMaterial, SAMPLE_MATERIAL } from "../src/server/materials";
 import { MaterialStore } from "../src/server/store";
@@ -91,8 +91,9 @@ test("a corrupted store is surfaced instead of overwritten", async () => {
 });
 
 test("unconfigured AI returns an explicit boundary rather than fabricated output", async () => {
-  assert.equal(adaptationProvider.configured, false);
-  await assert.rejects(adaptationProvider.adapt({
+  const provider = createAdaptationProvider({});
+  assert.equal(provider.configured, false);
+  await assert.rejects(provider.adapt({
     material: SAMPLE_MATERIAL, section: SAMPLE_MATERIAL.sections[0], mode: "steps",
   }), (error: unknown) => error instanceof HttpError && error.status === 501 && error.code === "AI_NOT_CONFIGURED");
 });

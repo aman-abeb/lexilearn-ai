@@ -3,6 +3,7 @@
 import { useState, useId, type CSSProperties, type FormEvent } from "react";
 import type { ReadingPreferences } from "@/lib/contracts";
 import { safePreferences } from "@/lib/preferences";
+import { SPEECH_RATES } from "@/lib/client/speech";
 import { useAuth } from "./auth-provider";
 import { Icon } from "./icon";
 import { useReadingPreferences } from "./reading-preferences-provider";
@@ -23,6 +24,7 @@ export function readingStyle(preferences: ReadingPreferences): CSSProperties {
     "--reading-words": `${preferences.wordSpacing}em`,
     "--reading-paragraph": `${preferences.paragraphSpacing}em`,
     "--reading-weight": preferences.fontWeight === "bold" ? "700" : "400",
+    "--reading-measure": preferences.readingWidth === "narrow" ? "46ch" : preferences.readingWidth === "wide" ? "76ch" : "62ch",
     "--reading-font": preferences.fontFamily === "serif"
       ? "Georgia, 'Times New Roman', serif"
       : preferences.fontFamily === "clear"
@@ -89,6 +91,22 @@ export function PreferenceControls({ compact = false }: { compact?: boolean }) {
     <fieldset className="preference-control"><legend className="field-label">Page colour</legend>
       <div className="segmented-control">{PAGE_COLOURS.map(({ theme, label }) => <button type="button" key={theme} aria-label={label} title={label} aria-pressed={preferences.theme === theme} disabled={!ready} onClick={() => updatePreferences({ theme })}><span className={`color-swatch color-swatch-${theme}`} /></button>)}</div>
     </fieldset>
+    <fieldset className="preference-control"><legend className="field-label">Line length</legend>
+      <div className="segmented-control">
+        <button type="button" aria-pressed={preferences.readingWidth === "narrow"} disabled={!ready} onClick={() => updatePreferences({ readingWidth: "narrow" })}>Short</button>
+        <button type="button" aria-pressed={preferences.readingWidth === "medium"} disabled={!ready} onClick={() => updatePreferences({ readingWidth: "medium" })}>Medium</button>
+        <button type="button" aria-pressed={preferences.readingWidth === "wide"} disabled={!ready} onClick={() => updatePreferences({ readingWidth: "wide" })}>Long</button>
+      </div>
+      {!compact && <p className="field-help">Shorter lines can make it easier to keep your place. Longer lines show more of the paragraph at once.</p>}
+    </fieldset>
+    <div className="preference-control">
+      <label className="field-label" htmlFor={`${id}-speech`}>Read-aloud speed</label>
+      <select id={`${id}-speech`} className="text-input" disabled={!ready} value={preferences.speechRate} onChange={event => updatePreferences({ speechRate: Number(event.target.value) })}>
+        {!SPEECH_RATES.some(rate => rate === preferences.speechRate) && <option value={preferences.speechRate}>{preferences.speechRate}×</option>}
+        {SPEECH_RATES.map(rate => <option key={rate} value={rate}>{rate}×</option>)}
+      </select>
+      {!compact && <p className="field-help">Used when a passage is read aloud. You can still change it next to the play button.</p>}
+    </div>
     {!compact && <div className="preference-control"><label className="checkbox-control"><input type="checkbox" checked={preferences.sentenceGuide} disabled={!ready} onChange={event => updatePreferences({ sentenceGuide: event.target.checked })} /><span><strong>Sentence guide</strong><small>Read one sentence at a time within a section. Turn it off to see the full paragraph.</small></span></label></div>}
     <div className="preference-control"><label className="checkbox-control"><input type="checkbox" checked={preferences.readingGuide} disabled={!ready} onChange={event => updatePreferences({ readingGuide: event.target.checked })} /><span><strong>Reading guide</strong><small>Dim the other paragraphs while you point at one, or move to it with the keyboard.</small></span></label></div>
     {!compact && <label className="checkbox-control"><input type="checkbox" checked={preferences.focusMode} disabled={!ready} onChange={event => updatePreferences({ focusMode: event.target.checked })} /><span><strong>Focus view</strong><small>Hide the navigation while reading. Use Exit focus to bring it back.</small></span></label>}

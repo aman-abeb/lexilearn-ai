@@ -4,20 +4,20 @@ import { XMLParser, XMLValidator } from "fast-xml-parser";
 import type { ExtractedSourceResponse } from "../../lib/contracts";
 import { MAX_SOURCE_CHARACTERS } from "../../lib/validation";
 import { HttpError } from "../http";
+import { cleanTranscript } from "../../lib/transcript";
 
 export const MAX_FILE_BYTES = 10_000_000;
 const fileError = (message: string) => new HttpError(422, "EXTRACTION_FAILED", message);
 
-/** Keep caption timing labels while removing file-format metadata. */
+/** Import captions as clean reading text, without timing or file metadata. */
 export function captionText(text: string): string {
-  return text.replace(/^\uFEFF/, "").split(/\r?\n\s*\r?\n/).flatMap(block => {
+  return cleanTranscript(text.replace(/^\uFEFF/, "").split(/\r?\n\s*\r?\n/).flatMap(block => {
     const lines = block.split(/\r?\n/);
     const timeIndex = lines.findIndex(line => /\d{2}:\d{2}[.,]\d{3}\s*-->/.test(line));
     if (timeIndex < 0) return [];
-    const timestamp = lines[timeIndex].split(/\s*-->/)[0].trim().replace(",", ".");
     const words = lines.slice(timeIndex + 1).join(" ").replace(/<[^>]+>/g, "").trim();
-    return words ? [`[${timestamp}] ${words}`] : [];
-  }).join("\n\n");
+    return words ? [words] : [];
+  }).join("\n\n"));
 }
 
 function isTemplatePlaceholder(value: unknown): boolean {

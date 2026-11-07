@@ -51,12 +51,12 @@ test("YouTube video URL forms normalize to one video without accepting arbitrary
   }
 });
 
-test("available captions become a timestamped lecture source and VTT with the selected language", async () => {
+test("available captions become clean lecture text and timed VTT with the selected language", async () => {
   const fixture = youtubeFixture();
   const result = await importYouTubeCaptions(`https://youtu.be/${VIDEO_ID}`, { fetch: fixture.network });
   assert.equal(result.source.name, "Identity and privacy");
   assert.equal(result.source.url, VIDEO_URL);
-  assert.equal(result.source.text, "[00:00:01.250] Digital identity & privacy. Identification is not authentication.\n\n[00:00:34.000] Authorization determines what you can do.");
+  assert.equal(result.source.text, "Digital identity & privacy. Identification is not authentication.\n\nAuthorization determines what you can do.");
   assert.equal(result.source.transcript?.language, "en");
   assert.equal(result.source.transcript?.automatic, false);
   assert.equal(result.cueCount, 3);
@@ -123,7 +123,9 @@ test("caption formatting preserves spoken repetitions, Unicode, and mathematical
   const result = formatYouTubeCaptions(cues);
   assert.match(result.text, /Very, very important: x < y & y > 0/);
   assert.match(result.text, /It's an example — café/);
-  assert.match(result.text, /\[01:01:01\.010\] Review/);
+  assert.match(result.text, /\n\nReview the definition\./);
+  assert.doesNotMatch(result.text, /\[01:01:01\.010\]/);
+  assert.match(result.captionsVtt, /01:01:01\.010 --> 01:01:02\.010/);
   assert.equal(result.cueCount, 3);
 });
 

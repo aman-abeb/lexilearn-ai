@@ -89,10 +89,10 @@ test("a university recording reference and slide text are not described as retri
   assert.equal(looksLikeSlideText("[00:00:01.000] The lecturer now discusses Slide 1.\n\n[00:00:04.000] Slide 2 introduces digital identity."), false);
 });
 
-test("caption imports keep spoken words and source timestamps rather than timing syntax", () => {
+test("caption file imports keep clean spoken words without timing syntax", () => {
   const vtt = "WEBVTT\n\ncue-1\n00:00:01.000 --> 00:00:04.000\n<v Lecturer>Encoding is the first step.</v>\n\ncue-2\n00:00:04.000 --> 00:00:07.000\nThen information is stored.\n";
-  assert.equal(captionText(vtt), "[00:00:01.000] Encoding is the first step.\n\n[00:00:04.000] Then information is stored.");
-  assert.equal(captionText("1\n00:01:02,000 --> 00:01:03,000\nRetrieval means recalling information."), "[00:01:02.000] Retrieval means recalling information.");
+  assert.equal(captionText(vtt), "Encoding is the first step.\n\nThen information is stored.");
+  assert.equal(captionText("1\n00:01:02,000 --> 00:01:03,000\nUm, retrieval means, uh, recalling information."), "retrieval means, recalling information.");
 });
 
 test("PPTX extraction follows presentation order and retains speaker notes", async () => {
