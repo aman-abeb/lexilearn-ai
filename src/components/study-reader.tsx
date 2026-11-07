@@ -9,10 +9,11 @@ import { Icon } from "./icon";
 import { PersonalGlossary } from "./personal-glossary";
 import { readingStyle } from "./preference-controls";
 import { ReadAloud } from "./read-aloud";
+import { SectionHelp } from "./section-help";
 import { useReadingPreferences } from "./reading-preferences-provider";
 import { useReadingProgress } from "./reading-progress-provider";
 
-export function StudyReader({ material: original, onOpenSource }: { material: Material; onOpenSource: (id: string) => void }) {
+export function StudyReader({ material: original, aiAvailable, onOpenSource, onPractice }: { material: Material; aiAvailable: boolean; onOpenSource: (id: string) => void; onPractice: (sectionId: string) => void }) {
   const material = useMemo(() => readingMaterial(original), [original]);
   const [view, setView] = useState<"section" | "full">("section");
   const [sentenceIndex, setSentenceIndex] = useState(0);
@@ -55,8 +56,9 @@ export function StudyReader({ material: original, onOpenSource }: { material: Ma
     </article>
     {guided && <nav className="sentence-navigation" aria-label="Sentences in this section"><button type="button" className="button button-secondary button-small" disabled={activeSentence === 0} onClick={() => setSentenceIndex(activeSentence - 1)}>Previous sentence</button><span role="status">{activeSentence + 1} / {sentences.length}</span><button type="button" className="button button-secondary button-small" disabled={activeSentence >= sentences.length - 1} onClick={() => setSentenceIndex(activeSentence + 1)}>Next sentence</button></nav>}
     {view === "section" && <>
-      <div className="reading-actions"><label className="checkbox-control"><input type="checkbox" checked={saved.completedSectionIds.includes(section.id)} onChange={() => updateProgress(material, current => ({ ...current, completedSectionIds: toggleSection(current.completedSectionIds, section.id) }))} /><span>Mark section as read</span></label><button type="button" className="button button-ghost button-small" aria-pressed={saved.reviewSectionIds.includes(section.id)} onClick={() => updateProgress(material, current => ({ ...current, reviewSectionIds: toggleSection(current.reviewSectionIds, section.id) }))}>{saved.reviewSectionIds.includes(section.id) ? "Saved to revisit" : "Revisit later"}</button></div>
+      <div className="reading-actions"><label className="checkbox-control"><input type="checkbox" checked={saved.completedSectionIds.includes(section.id)} onChange={() => updateProgress(material, current => ({ ...current, completedSectionIds: toggleSection(current.completedSectionIds, section.id) }))} /><span>Mark section as read</span></label><div className="control-group"><button type="button" className="button button-ghost button-small" onClick={() => onPractice(section.id)}><Icon name="practice" size={17} />Practice this section</button><button type="button" className="button button-ghost button-small" aria-pressed={saved.reviewSectionIds.includes(section.id)} onClick={() => updateProgress(material, current => ({ ...current, reviewSectionIds: toggleSection(current.reviewSectionIds, section.id) }))}>{saved.reviewSectionIds.includes(section.id) ? "Saved to revisit" : "Revisit later"}</button></div></div>
       <nav className="section-navigation" aria-label="Lecture sections"><button type="button" className="button button-secondary" disabled={sectionIndex === 0} onClick={() => moveSection(sectionIndex - 1)}><Icon name="back" size={17} />Previous section</button><button type="button" className="button button-primary" disabled={sectionIndex >= material.sections.length - 1} onClick={() => moveSection(sectionIndex + 1)}>Next section<Icon name="arrow" size={17} /></button></nav>
+      <SectionHelp key={section.id} materialId={original.id} section={section} sources={original.sources} aiAvailable={aiAvailable} onOpenSource={onOpenSource} />
     </>}
     <ReadAloud key={`${section.id}-${view}-${guided}-${activeSentence}`} text={text} label={guided ? "Read sentence aloud" : view === "full" ? "Read full notes aloud" : "Read section aloud"} />
     <div className="reader-progress"><span role="status">{saved.completedSectionIds.length} of {material.sections.length} sections marked as read</span><div className="progress-track" role="progressbar" aria-label="Sections marked as read" aria-valuenow={saved.completedSectionIds.length} aria-valuemin={0} aria-valuemax={material.sections.length}><span style={{ width: `${saved.completedSectionIds.length / material.sections.length * 100}%` }} /></div></div>

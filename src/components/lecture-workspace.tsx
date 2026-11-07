@@ -11,12 +11,15 @@ import { useReadingPreferences } from "./reading-preferences-provider";
 import { useReadingProgress } from "./reading-progress-provider";
 import { SourceComposer } from "./source-composer";
 import { SourceList } from "./source-list";
+import { PracticeSession } from "./practice-session";
+import { StudyCompanion } from "./study-companion";
 import { StudyReader } from "./study-reader";
 
 export function LectureWorkspace({ initialMaterial, compilationAvailable }: { initialMaterial: Material; compilationAvailable: boolean }) {
   const id = useId();
   const [material, setMaterial] = useState(initialMaterial);
-  const [tab, setTab] = useState<"notes" | "sources">(initialMaterial.sections.length || initialMaterial.compilation ? "notes" : "sources");
+  const [tab, setTab] = useState<"notes" | "practice" | "ask" | "sources">(initialMaterial.sections.length || initialMaterial.compilation ? "notes" : "sources");
+  const [practiceSectionId, setPracticeSectionId] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addingSource, setAddingSource] = useState(false);
   const [editingSource, setEditingSource] = useState<LectureSource | null>(null);
@@ -52,6 +55,17 @@ export function LectureWorkspace({ initialMaterial, compilationAvailable }: { in
     });
   }
 
+  function openPracticeSection(sectionId: string, markRevisit: boolean) {
+    const reader = readingMaterial(material);
+    if (!reader.sections.some(section => section.id === sectionId)) return;
+    updateProgress(reader, current => ({
+      ...current,
+      lastSectionId: sectionId,
+      reviewSectionIds: markRevisit && !current.reviewSectionIds.includes(sectionId) ? [...current.reviewSectionIds, sectionId] : current.reviewSectionIds,
+    }));
+    setTab("notes");
+  }
+
   function openComposer(source?: LectureSource) {
     setEditingSource(source ?? null); setAddingSource(true); setTab("sources");
     requestAnimationFrame(() => composerHeading.current?.focus());
@@ -69,14 +83,15 @@ export function LectureWorkspace({ initialMaterial, compilationAvailable }: { in
   return <div className={`lecture-workspace ${preferences.focusMode ? "focus-mode" : ""}`}>
     <Link href={`/courses/${material.courseId}`} className="back-link"><Icon name="back" size={17} />Back to course</Link>
     <header className="page-heading lecture-heading"><div className="lecture-context"><Link href={`/courses/${material.courseId}`}>{material.course}</Link><span className="badge badge-muted">Lecture {String(material.lectureNumber).padStart(2, "0")}</span>{material.isSample && <span className="badge badge-muted">Illustrative sample</span>}{material.compilation && <span className="badge"><Icon name="check" size={14} />AI-compiled notes</span>}</div><h1>{material.title}</h1></header>
-    <div className="workspace-navigation"><div className="workspace-tabs" role="group" aria-label="Lecture workspace"><button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}><Icon name="book" size={18} />Study notes</button><button type="button" aria-pressed={tab === "sources"} onClick={() => setTab("sources")}><Icon name="file" size={18} />Sources <span className="tab-count">{material.sources.length}</span></button></div><button type="button" className="button button-ghost button-small" disabled={!ready} aria-pressed={preferences.focusMode} onClick={() => updatePreferences({ focusMode: !preferences.focusMode })}><Icon name="focus" size={18} />{preferences.focusMode ? "Exit focus" : "Focus view"}</button></div>
+    <div className="workspace-navigation"><div className="workspace-tabs" role="group" aria-label="Lecture workspace"><button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}><Icon name="book" size={18} />Study notes</button><button type="button" aria-pressed={tab === "practice"} onClick={() => setTab("practice")}><Icon name="practice" size={18} />Practice</button><button type="button" aria-pressed={tab === "ask"} onClick={() => setTab("ask")}><Icon name="chat" size={18} />Ask AI</button><button type="button" aria-pressed={tab === "sources"} onClick={() => setTab("sources")}><Icon name="file" size={18} />Sources <span className="tab-count">{material.sources.length}</span></button></div><button type="button" className="button button-ghost button-small" disabled={!ready} aria-pressed={preferences.focusMode} onClick={() => updatePreferences({ focusMode: !preferences.focusMode })}><Icon name="focus" size={18} />{preferences.focusMode ? "Exit focus" : "Focus view"}</button></div>
     <div className="workspace-tools"><button type="button" className="button button-ghost button-small" aria-expanded={settingsOpen} aria-controls={`${id}-settings`} onClick={() => setSettingsOpen(value => !value)}><Icon name="sliders" size={18} />{settingsOpen ? "Close reading settings" : "Reading settings"}</button>{tab === "notes" && readable.length > 0 && <button type="button" className="button button-ghost button-small" onClick={downloadNotes}><Icon name="download" size={18} />Save a text copy</button>}</div>
     <section id={`${id}-settings`} className="reading-settings-drawer" hidden={!settingsOpen} aria-label="Reading settings"><PreferenceControls compact /></section>
-    {tab === "notes" ? <>
+    {readable.length > 0 && <div hidden={tab !== "practice"}><PracticeSession key={`${material.id}-${material.compilation?.generatedAt ?? "source"}`} material={material} aiAvailable={compilationAvailable} focusSectionId={practiceSectionId} onOpenSection={openPracticeSection} /></div>}
+    {tab === "practice" ? (readable.length ? null : <div className="empty-state"><span className="empty-icon"><Icon name="practice" size={28} /></span><h2>Nothing to practice yet</h2><p>Add notes, slides, or a transcript first. Then you can try a problem from this lecture.</p><button type="button" className="button button-primary" onClick={() => openComposer()}>Add lecture content<Icon name="plus" size={18} /></button></div>) : tab === "ask" ? (readable.length ? <StudyCompanion key={`${material.id}-${material.compilation?.generatedAt ?? "source"}`} material={material} aiAvailable={compilationAvailable} /> : <div className="empty-state"><span className="empty-icon"><Icon name="chat" size={28} /></span><h2>Nothing to ask about yet</h2><p>Add notes, slides, or a transcript first. Then you can summarise, analyse, or talk through the lecture.</p><button type="button" className="button button-primary" onClick={() => openComposer()}>Add lecture content<Icon name="plus" size={18} /></button></div>) : tab === "notes" ? <>
       {(!material.compilation || !current) && <section className="compilation-panel" aria-labelledby="compilation-heading" aria-busy={compiling}><span className="compilation-icon"><Icon name="sparkles" size={23} /></span><div><h2 id="compilation-heading">{material.compilation ? "Your sources have changed" : "One lecture. One set of notes."}</h2><p>{material.compilation ? "Compile again to bring the updated material into your study notes." : "Bring the lecture notes, slide text, and transcript into a single, organized reading."}</p>{!compilationAvailable ? <p className="field-help">AI compilation is not connected yet. You can read the original source text below.</p> : !readable.length ? <p className="field-help">Add notes, slides, or a recording transcript to start.</p> : <p className="field-help">{readable.length} {readable.length === 1 ? "source has" : "sources have"} text ready to use. Links without transcripts stay available in Sources.</p>}</div><button type="button" className="button button-primary" disabled={compiling || !readable.length || !compilationAvailable} onClick={() => void compile()}>{compiling ? "Compiling notes…" : material.compilation ? "Update study notes" : "Compile study notes"}<Icon name="arrow" size={18} /></button></section>}
       {compiling && <p className="notice" role="status">Bringing your lecture sources together. You can keep reading while your notes are prepared.</p>}
       {error && <p className="error-panel" role="alert">{error}</p>}
-      {readingMaterial(material).sections.length > 0 ? <StudyReader key={`${material.id}-${material.compilation?.generatedAt ?? "source"}`} material={material} onOpenSource={openSource} /> : <div className="empty-state"><span className="empty-icon"><Icon name="recording" size={28} /></span><h2>Your recording is saved</h2><p>Add its transcript, lecture notes, or slides to start building your reading space.</p><button type="button" className="button button-primary" onClick={() => openComposer(material.sources.find(source => source.kind === "recording"))}>Add lecture content<Icon name="plus" size={18} /></button></div>}
+      {readingMaterial(material).sections.length > 0 ? <StudyReader key={`${material.id}-${material.compilation?.generatedAt ?? "source"}`} material={material} aiAvailable={compilationAvailable} onOpenSource={openSource} onPractice={sectionId => { setPracticeSectionId(sectionId); setTab("practice"); }} /> : <div className="empty-state"><span className="empty-icon"><Icon name="recording" size={28} /></span><h2>Your recording is saved</h2><p>Add its transcript, lecture notes, or slides to start building your reading space.</p><button type="button" className="button button-primary" onClick={() => openComposer(material.sources.find(source => source.kind === "recording"))}>Add lecture content<Icon name="plus" size={18} /></button></div>}
       {material.compilation?.warnings.length ? <details className="study-panel"><summary>Source notes to check <span className="badge badge-muted">{material.compilation.warnings.length}</span></summary><div className="study-panel-content"><ul className="source-warning-list">{material.compilation.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul></div></details> : null}
       {material.compilation && current && <details className="study-panel"><summary>Update compiled notes</summary><div className="study-panel-content"><p className="field-help">Compile a fresh version from the current sources. Reading markers restart for the new sections; your personal glossary stays linked to the originals.</p><button type="button" className="button button-secondary" disabled={compiling || !compilationAvailable} onClick={() => void compile()}><Icon name="sparkles" size={18} />{compiling ? "Compiling notes…" : "Compile again"}</button></div></details>}
     </> : <section aria-labelledby="sources-heading">

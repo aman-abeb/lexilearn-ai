@@ -27,6 +27,7 @@ export function safePreferences(value: unknown): ReadingPreferences {
     focusMode: typeof data.focusMode === "boolean" ? data.focusMode : false,
     sentenceGuide: typeof data.sentenceGuide === "boolean" ? data.sentenceGuide : false,
     readingGuide: typeof data.readingGuide === "boolean" ? data.readingGuide : false,
+    readingWidth: data.readingWidth === "narrow" || data.readingWidth === "wide" ? data.readingWidth : "medium",
     speechRate: numeric(data.speechRate, 0.75, 1.25, DEFAULT_READING_PREFERENCES.speechRate),
   };
 }

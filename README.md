@@ -14,6 +14,7 @@
 - **Other recordings:** Keep a Webex or university recording link with the lecture. Paste a transcript or import TXT, VTT, or SRT captions. A recording can be saved first and its transcript added later.
 - **AI compilation:** With a server-side provider key, combine the available source text into topic-based full study notes, a brief overview, and key terms. Each section links back to the original sources. Recompile when sources change.
 - **Comfortable reading:** One section or sentence at a time, a full-notes view, adjustable size and spacing, typeface, page colour, a reading guide, named arrangements, light or dark appearance, and a focus view that hides navigation.
+- **Section help:** On a single section, ask for a plain-language explanation, a breakdown into steps, or the terms in that section. Each reply is labelled as generated, keeps its warnings, and links back to the original sources. The section itself stays on the page if the request fails.
 - **Optional narration:** Choose a speed, pause, resume, or stop. Changing the passage stops narration.
 - **Personal study tools:** Resume the last section, explicitly mark sections as read, save passages to revisit, and maintain a personal glossary. Personal definitions keep their original-source links when compiled notes are regenerated.
 - **Exam preparation:** Practice a lecture with written or oral self-review, or multiple-choice questions with answers and supporting passages. The included sample has ready-made questions; generating questions for other lectures requires the AI key and sends the lecture text to the configured provider. AI questions can contain mistakes, so check the passage. Practice is session-only; written and oral responses are not AI-graded.
@@ -140,7 +141,7 @@ The application uses **Next.js App Router, React, TypeScript, Zod, and Node.js r
 | `POST` | `/api/materials/:id/exam-questions` | Create multiple-choice questions from the lecture's readable sections |
 | `POST` | `/api/sources/extract` | Extract an uploaded file into reviewable text |
 | `POST` | `/api/sources/youtube` | Retrieve YouTube captions and a timestamped transcript |
-| `POST` | `/api/materials/:id/adapt` | Future selected-section adaptation; currently HTTP 501 |
+| `POST` | `/api/materials/:id/adapt` | Explain the current section in plain language, steps, or terms |
 
 See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 
@@ -160,7 +161,7 @@ See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 ## Next milestones
 
 1. Authorized Webex integration and audio transcription, so a recording link can supply its spoken content directly.
-2. Source-grounded clarification of a selected passage and short comprehension checks.
+2. Short source-grounded comprehension checks. Selected-section explanations are available when the AI key is set.
 3. Review of compiled notes against a real lecture, including definitions, exceptions, equations, and extraction gaps.
 4. Feedback from dyslexic students, followed by durable storage and account-synced study progress.
 

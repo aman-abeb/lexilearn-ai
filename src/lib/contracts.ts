@@ -86,6 +86,8 @@ export type ReadingPreferences = {
   sentenceGuide: boolean;
   /** Dim other paragraphs while one is pointed at or focused. */
   readingGuide: boolean;
+  /** How many characters sit on one reading line. */
+  readingWidth: "narrow" | "medium" | "wide";
   speechRate: number;
 };
 
@@ -108,6 +110,7 @@ export const DEFAULT_READING_PREFERENCES: ReadingPreferences = {
   focusMode: false,
   sentenceGuide: false,
   readingGuide: false,
+  readingWidth: "medium",
   speechRate: 0.9,
 };
 
@@ -148,6 +151,51 @@ export type MultipleChoiceQuestion = {
   evidence: string;
 };
 export type MultipleChoiceResponse = { questions: MultipleChoiceQuestion[]; origin: "sample" | "ai" };
+export type LectureSummary = {
+  headline: string;
+  takeaways: string[];
+  inOneMinute: string;
+  warnings: string[];
+  generatedAt: string;
+};
+export type LectureAnalysis = {
+  mainIdeas: { title: string; explanation: string }[];
+  confusionPoints: { point: string; why: string }[];
+  connections: string[];
+  reviewPlan: string[];
+  warnings: string[];
+  generatedAt: string;
+};
+export type StudyChatRole = "user" | "assistant";
+export type StudyChatMessage = { role: StudyChatRole; text: string };
+export type StudyChatReply = { text: string; warnings: string[]; generatedAt: string };
+export type LectureSummaryResponse = { summary: LectureSummary };
+export type LectureAnalysisResponse = { analysis: LectureAnalysis };
+export type StudyChatResponse = { reply: StudyChatReply };
+export type PracticeProblem = {
+  id: string;
+  prompt: string;
+  concept: string;
+  sectionId: string;
+  sectionTitle: string;
+  hintsAvailable: number;
+  warnings: string[];
+  generatedAt: string;
+};
+export type PracticeHint = { hint: string; hintsUsed: number; hintsLeft: number };
+export type PracticeVerdict = "on-track" | "partly" | "revisit";
+export type PracticeCheck = {
+  verdict: PracticeVerdict;
+  feedback: string;
+  whatToInclude: string;
+  steps: string[];
+  sectionId: string;
+  sectionTitle: string;
+  warnings: string[];
+};
+export type PracticeProblemResponse = { problem: PracticeProblem };
+export type PracticeHintResponse = PracticeHint;
+export type PracticeCheckResponse = { result: PracticeCheck };
 export type CourseListResponse = { courses: CourseSummary[]; compilationAvailable: boolean };
 export type CourseResponse = { course: CourseSummary };
 export type ExtractedSourceResponse = { name: string; text: string; warnings: string[] };
