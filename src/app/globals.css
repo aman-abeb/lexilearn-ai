@@ -646,6 +646,39 @@ fieldset.preference-control { border-top: 0; border-left: 0; border-right: 0; pa
 [data-appearance="dark"] .chat-user { background: #2a4034; }
 [data-appearance="dark"] .chat-assistant { background: #1c2a24; }
 [data-appearance="dark"] .practice-hints li { background: #1c2a24; }
+[data-appearance="dark"] .compilation-panel,
+[data-appearance="dark"] .continue-panel,
+[data-appearance="dark"] .youtube-import-panel,
+[data-appearance="dark"] .inline-course-panel,
+[data-appearance="dark"] .lecture-number-preview,
+[data-appearance="dark"] .extraction-notes,
+[data-appearance="dark"] .compilation-availability { background: #1e2c24; border-color: #3d5146; color: var(--ink); }
+[data-appearance="dark"] .compilation-panel h2,
+[data-appearance="dark"] .continue-panel h2 { color: #e7f0ea; }
+[data-appearance="dark"] .compilation-panel p,
+[data-appearance="dark"] .continue-panel p { color: #c5d4c8; }
+[data-appearance="dark"] .compilation-icon,
+[data-appearance="dark"] .continue-icon { background: #24382d; border-color: #3d5146; color: #cfe0d3; }
+[data-appearance="dark"] .tab-count { background: #2a4034; color: #d5e6d4; }
+[data-appearance="dark"] .lecture-card-number { background: #24382d; color: #d5e6d4; }
+[data-appearance="dark"] .lecture-context,
+[data-appearance="dark"] .source-chips span,
+[data-appearance="dark"] .card-reading-progress,
+[data-appearance="dark"] .caption-import-success { color: #c5d4c8; }
+[data-appearance="dark"] .source-type { background: #1a2420; }
+[data-appearance="dark"] .source-type.is-selected { background: #24382d; border-color: #6f8f7c; }
+[data-appearance="dark"] .source-type > svg,
+[data-appearance="dark"] .source-icon,
+[data-appearance="dark"] .course-icon { background: #24382d; color: #cfe0d3; }
+[data-appearance="dark"] .upload-zone .source-icon { background: #2a4034; }
+[data-appearance="dark"] .form-steps li > span { background: #1a2420; border-color: #3d5146; }
+[data-appearance="dark"] .form-steps .is-complete > span { background: #24382d; border-color: #6f8f7c; color: #cfe0d3; }
+[data-appearance="dark"] .form-steps li[aria-current="step"] > span { color: #102017; }
+[data-appearance="dark"] .empty-icon { background: #24382d; color: #cfe0d3; }
+[data-appearance="dark"] .search-field { background: #15201b; border-color: #3d5146; }
+[data-appearance="dark"] .search-field svg { color: #b7c4b8; }
+[data-appearance="dark"] .workspace-tabs > button[aria-pressed="true"] { color: #cfe0d3; }
+[data-appearance="dark"] .page-subtitle { color: #c5d4c8; }
 @media (max-width: 700px) {
   [data-appearance="dark"] .sidebar { border-top-color: #2c3b34; box-shadow: 0 -8px 24px rgba(0, 0, 0, .35); }
 }
@@ -667,6 +700,8 @@ fieldset.preference-control { border-top: 0; border-left: 0; border-right: 0; pa
 .exam-option { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
 .exam-option input { flex-shrink: 0; width: 20px; height: 20px; margin: 8px 0 0; accent-color: var(--green); }
 .exam-answer { margin-top: 22px; }
+.exam-voice { display: grid; gap: 16px; margin-top: 22px; }
+.exam-voice > p { color: var(--muted); font-size: 15px; max-width: 62ch; }
 .exam-reference { padding: 24px; border: 1px solid var(--line); border-radius: 12px; margin-top: 20px; overflow-wrap: anywhere; }
 .exam-reference .reading-sample { white-space: pre-wrap; }
 .exam-check { margin-top: 20px; }

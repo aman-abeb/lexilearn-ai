@@ -150,7 +150,7 @@ export type MultipleChoiceQuestion = {
   sectionId: string;
   evidence: string;
 };
-export type MultipleChoiceResponse = { questions: MultipleChoiceQuestion[]; origin: "sample" | "ai" };
+export type MultipleChoiceResponse = { questions: MultipleChoiceQuestion[]; origin: "sample" | "ai"; warning?: string };
 export type LectureSummary = {
   headline: string;
   takeaways: string[];

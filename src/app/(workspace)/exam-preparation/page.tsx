@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type DragEvent } from "react";
+import { ExamVoice } from "@/components/exam-voice";
 import { Icon } from "@/components/icon";
 import { readingStyle } from "@/components/preference-controls";
 import { ReadAloud } from "@/components/read-aloud";
@@ -19,6 +20,7 @@ export default function ExamPreparationPage() {
   const [attempt, setAttempt] = useState(0);
   const [materialId, setMaterialId] = useState("");
   const [mode, setMode] = useState<Mode>("written");
+  const [aiAvailable, setAiAvailable] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -30,6 +32,14 @@ export default function ExamPreparationPage() {
     return () => controller.abort();
   }, [attempt]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    apiRequest<{ aiConfigured?: boolean }>("/api/health", { signal: controller.signal })
+      .then(data => { if (!controller.signal.aborted && data.aiConfigured === false) setAiAvailable(false); })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
   const material = materials.find(item => item.id === materialId);
   return <div className="exam-workspace">
     <div className="page-heading"><p className="eyebrow">YOUR STUDY SPACE</p><h1>Exam preparation</h1><p className="page-subtitle">Use specific notes or choose a saved lecture to practice in the way that suits you.</p></div>
@@ -40,7 +50,7 @@ export default function ExamPreparationPage() {
         <div className="field"><label className="field-label" htmlFor="exam-material">Choose a lecture</label><select id="exam-material" className="text-input" value={materialId} onChange={event => setMaterialId(event.target.value)}><option value="">Select a lecture</option>{materials.map(item => <option key={item.id} value={item.id}>{item.course} · {item.title}</option>)}</select></div>
         <fieldset className="exam-modes"><legend className="field-label">Choose a practice format</legend><div className="view-switch" role="group" aria-label="Practice format"><button type="button" aria-pressed={mode === "written"} onClick={() => setMode("written")}>Written</button><button type="button" aria-pressed={mode === "oral"} onClick={() => setMode("oral")}>Oral</button><button type="button" aria-pressed={mode === "mcq"} onClick={() => setMode("mcq")}>Multiple choice</button></div></fieldset>
       </div>
-      {material && (mode === "mcq" ? <MultipleChoice key={material.id} material={readingMaterial(material)} /> : <Practice key={`${material.id}-${mode}`} material={readingMaterial(material)} mode={mode} />)}
+      {material && (mode === "mcq" ? <MultipleChoice key={material.id} material={readingMaterial(material)} /> : <Practice key={`${material.id}-${mode}`} material={readingMaterial(material)} mode={mode} aiAvailable={aiAvailable} />)}
     </>}
   </div>;
 }
@@ -96,7 +106,7 @@ function NotesExam() {
   </section>;
 }
 
-function Practice({ material, mode }: { material: Material; mode: "written" | "oral" }) {
+function Practice({ material, mode, aiAvailable }: { material: Material; mode: "written" | "oral"; aiAvailable: boolean }) {
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [revealed, setRevealed] = useState(false);
@@ -114,13 +124,15 @@ function Practice({ material, mode }: { material: Material; mode: "written" | "o
   return <section className="exam-practice" aria-labelledby="practice-title">
     <div className="section-heading"><div><p className="section-kicker">{mode.toUpperCase()} PRACTICE</p><h2 id="practice-title">{material.title}</h2></div><span className="badge badge-muted" role="status">{index + 1} of {count}</span></div>
     <div className={`reader-paper exam-paper theme-${preferences.theme}`} style={readingStyle(preferences)}>
-      <div className="reading-sample"><p>{prompt}</p><p>{mode === "oral" ? "Say your answer aloud, or write a few notes if you prefer." : "Write your response, then compare it with the lecture notes."}</p></div>
+      <div className="reading-sample"><p>{prompt}</p><p>{mode === "oral" ? "Speak your answer. The coach replies aloud, then you can try again." : "Write your response, then compare it with the lecture notes."}</p></div>
     </div>
       <ReadAloud text={prompt} label="Read question aloud" />
-      <div className="field exam-answer"><label htmlFor="practice-answer" className="field-label">{mode === "oral" ? "Optional notes" : "Your answer"}</label><textarea id="practice-answer" className="text-area" value={answer} onChange={event => setAnswer(event.target.value)} placeholder="Your thoughts…" /></div>
+      {mode === "oral"
+        ? <ExamVoice key={section.id} materialId={material.id} sectionId={section.id} prompt={prompt} aiAvailable={aiAvailable} />
+        : <div className="field exam-answer"><label htmlFor="practice-answer" className="field-label">Your answer</label><textarea id="practice-answer" className="text-area" value={answer} onChange={event => setAnswer(event.target.value)} placeholder="Your thoughts…" /></div>}
       <button type="button" className="button button-secondary" aria-expanded={revealed} onClick={() => setRevealed(value => !value)}>{revealed ? "Hide lecture notes" : "Compare with lecture notes"}</button>
       {revealed && <div className={`exam-reference theme-${preferences.theme}`} style={readingStyle(preferences)}><p className="reader-source-label">{sectionLabel(section)} · {section.sourceLabel}</p><div className="reading-sample"><p>{section.text}</p></div></div>}
-      <p className="source-note">Review your answer yourself against the notes. Answers are not automatically graded or saved; moving to another question clears them.</p>
+      <p className="source-note">{mode === "oral" ? "The coach replies from this section. The conversation stays in this browser and clears when you move to another question. It is not saved." : "Review your answer yourself against the notes. Answers are not automatically graded or saved; moving to another question clears them."}</p>
     <nav className="section-navigation" aria-label="Practice questions"><button type="button" className="button button-secondary" disabled={index === 0} onClick={() => move(index - 1)}><Icon name="back" size={17} />Previous</button><button type="button" className="button button-primary" disabled={index >= count - 1} onClick={() => move(index + 1)}>Next<Icon name="arrow" size={17} /></button></nav>
     <p className="source-note">Practice uses {material.compilation ? "your compiled study notes, which may contain AI errors" : "your original lecture sections"}. <Link href={`/read/${material.id}`}>Open the lecture</Link> to check the full context.</p>
   </section>;
@@ -166,6 +178,7 @@ function MultipleChoice({ material, notes }: { material?: Material; notes?: stri
     {checked === undefined && <button type="button" className="button button-primary exam-check" disabled={answer === null} onClick={() => { if (answer !== null) setAnswers(current => ({ ...current, [index]: answer })); }}>Check answer</button>}
     {checked !== undefined && <div className="notice" role="status"><div><strong>{checked === question.correctIndex ? "Correct." : "Not quite."}</strong> Answer: {question.options[question.correctIndex]}.<p>{question.explanation}</p><p><strong>Supporting passage{section ? ` · ${section.title}` : ""}:</strong> {question.evidence}</p></div></div>}
     <p className="source-note">Score: {score} correct out of {Object.keys(answers).length} answered. Results last only for this session. {data.origin === "ai" ? "AI-generated questions can contain errors; check the supporting passage." : "Questions for the sample lecture were written for this demo."}</p>
+    {data.warning && <p className="notice" role="status">{data.warning}</p>}
     {Object.keys(answers).length > 0 && <button type="button" className="button button-ghost button-small" onClick={() => { setAnswers({}); move(0); }}>Start again</button>}
     <button type="button" className="button button-ghost button-small" onClick={() => { setData(null); setAnswers({}); move(0); }}>Create new questions</button>
     <nav className="section-navigation" aria-label="Practice questions"><button type="button" className="button button-secondary" disabled={index === 0} onClick={() => move(index - 1)}><Icon name="back" size={17} />Previous</button><button type="button" className="button button-primary" disabled={index >= data.questions.length - 1} onClick={() => move(index + 1)}>Next<Icon name="arrow" size={17} /></button></nav>

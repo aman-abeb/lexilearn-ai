@@ -136,6 +136,16 @@ export const studyChatSchema = z.object({
   }
 });
 
+export const oralExamSchema = z.object({
+  sectionId: z.string().trim().min(1).max(100),
+  prompt: z.string().trim().min(1).max(500),
+  messages: z.array(studyChatMessageSchema).min(1).max(12),
+}).strict().superRefine((value, context) => {
+  if (value.messages.at(-1)?.role !== "user") {
+    context.addIssue({ code: "custom", path: ["messages"], message: "Say or type an answer to continue." });
+  }
+});
+
 export const studyChatOutputSchema = z.object({
   text: z.string().trim().min(1).max(4_000),
   warnings: z.array(z.string().trim().min(1).max(500)).max(8),
