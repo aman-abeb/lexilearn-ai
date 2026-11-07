@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="en" data-appearance="light" suppressHydrationWarning><body><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /><AuthProvider><ReadingPreferencesProvider><ReadingProgressProvider><AccountSync />{children}</ReadingProgressProvider></ReadingPreferencesProvider></AuthProvider></body></html>;
+  return <html lang="en" data-appearance="light" suppressHydrationWarning><body suppressHydrationWarning><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /><AuthProvider><ReadingPreferencesProvider><ReadingProgressProvider><AccountSync />{children}</ReadingProgressProvider></ReadingPreferencesProvider></AuthProvider></body></html>;
 }
