@@ -16,7 +16,7 @@
 - **Comfortable reading:** One section or sentence at a time, a full-notes view, adjustable size and spacing, typeface, page colour, a reading guide, named arrangements, light or dark appearance, and a focus view that hides navigation.
 - **Optional narration:** Choose a speed, pause, resume, or stop. Changing the passage stops narration.
 - **Personal study tools:** Resume the last section, explicitly mark sections as read, save passages to revisit, and maintain a personal glossary. Personal definitions keep their original-source links when compiled notes are regenerated.
-- **Exam preparation:** Practice a lecture with written or oral self-review, or multiple-choice questions with answers and supporting passages. The included sample has ready-made questions; generating questions for other lectures requires the AI key and sends the lecture text to the configured provider. AI questions can contain mistakes, so check the passage. Practice is session-only; written and oral responses are not AI-graded.
+- **Exam preparation:** Practice a lecture with written or oral self-review, or multiple-choice questions with answers and supporting passages. Paste specific notes or drop a TXT, MD, PDF, or PPTX file to create multiple-choice questions, and optionally request a topic, difficulty, or style. Imported exam notes are not added to the library. The included sample has ready-made questions; generating questions from other notes or with custom preferences requires the AI key and sends the notes and preferences to the configured provider. AI questions can contain mistakes, so check the passage. Practice is session-only; written and oral responses are not AI-graded.
 - **Text export:** Download the lecture's study notes, key terms, and source notes as a plain-text file.
 
 The interface uses clear labels, left-aligned text, restrained colours, generous spacing, and reading settings that stay out of the way until opened. Students choose what helps them; no font or setting is presented as universally suitable for dyslexia. Read markers are student-selected, not comprehension scores.
@@ -138,6 +138,7 @@ The application uses **Next.js App Router, React, TypeScript, Zod, and Node.js r
 | `PATCH` | `/api/materials/:id/sources/:sourceId` | Update source text or attach a recording transcript |
 | `POST` | `/api/materials/:id/compile` | Compile and store source-grounded study notes |
 | `POST` | `/api/materials/:id/exam-questions` | Create multiple-choice questions from the lecture's readable sections |
+| `POST` | `/api/exam-questions` | Create multiple-choice questions from supplied notes and optional preferences |
 | `POST` | `/api/sources/extract` | Extract an uploaded file into reviewable text |
 | `POST` | `/api/sources/youtube` | Retrieve YouTube captions and a timestamped transcript |
 | `POST` | `/api/materials/:id/adapt` | Future selected-section adaptation; currently HTTP 501 |

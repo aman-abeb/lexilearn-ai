@@ -5,6 +5,11 @@ export const MAX_SOURCE_CHARACTERS = 100_000;
 export const MAX_LECTURE_CHARACTERS = 160_000;
 export const MAX_SOURCES = 12;
 
+export const notesQuestionSchema = z.object({
+  notes: z.string().max(100_000).refine(value => value.trim().length >= 30, "Add at least 30 characters of notes."),
+  prompt: z.string().trim().max(1000).default(""),
+}).strict();
+
 export const youtubeImportSchema = z.object({
   url: z.string().trim().max(2000).refine(value => !!parseYouTubeUrl(value), "Paste a valid YouTube video link, such as https://www.youtube.com/watch?v=… or https://youtu.be/…."),
 }).strict();

@@ -592,6 +592,11 @@ fieldset.preference-control { border-top: 0; border-left: 0; border-right: 0; pa
 }
 
 .exam-workspace { max-width: 880px; }
+.exam-notes { margin-bottom: 36px; }
+.exam-upload, .exam-prompt, .exam-note-text { margin-top: 20px; }
+.exam-upload:focus-within .button { outline: 3px solid #357296; outline-offset: 4px; }
+.exam-change-notes { margin-bottom: 12px; }
+.exam-prompt-input { min-height: 110px; }
 .exam-setup { margin-bottom: 28px; }
 .exam-modes, .exam-options { border: 0; padding: 0; margin: 0; min-width: 0; }
 .exam-modes legend { margin-bottom: 10px; }
