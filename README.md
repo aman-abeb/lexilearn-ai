@@ -349,6 +349,21 @@ The application uses **Next.js App Router, React, TypeScript, Zod, and Node.js r
 
 See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 
+## Data and current limits
+
+- Example courses, lectures, notes, slides, a recording, a transcript, and compiled study notes live in `src/server/examples/workspace.json`. The app shows that catalog without copying it into the saved workspace. Adding a lecture to an example course, or changing an example lecture, copies that course into the workspace file.
+- The local workspace is stored in `.data/materials.json`, configurable with `LEXILEARN_DATA_DIR`. Courses and lectures share one atomic file. Legacy lecture arrays are migrated without changing original text or section IDs. This directory is ignored by Git.
+- This is a single-process local prototype, with up to 100 courses and 100 lectures including the examples. Do not use the local JSON repository as shared storage across serverless instances.
+- A lecture can have 12 sources, 100,000 characters per source, and 160,000 characters combined. Uploaded files can be up to 10 MB; PDFs and slide decks can have up to 300 pages/slides.
+- Original uploaded binaries are not retained. Extracted text, source names, recording links, extraction notes, and generated study notes are saved.
+- Scanned pages, images, diagrams, and visual equations are not interpreted. Extraction feedback identifies empty pages and tells the student what needs checking.
+- PPTX extraction preserves spaces between formatted text runs and omits template slide-number/header/footer placeholders. Previously imported text is not modified automatically; re-import the source file to use extraction fixes.
+- AI compilation uses the available extracted text. Source coverage checks validate IDs, not the correctness or completeness of every generated sentence. No AI API key is needed to read lectures. Provider secrets stay server-side and must not use a `NEXT_PUBLIC_` prefix.
+- Reading settings, named arrangements, section progress, revisit markers, and up to 100 personal glossary entries per lecture live in the current browser. If browser storage is unavailable, changes remain usable until reload.
+- Practice problems are held in the server process for two hours, up to 40 at a time. Restarting the server drops them. Summaries, analyses, conversations, written exam answers, and oral coaching replies are not stored.
+- With Google sign-in, preferences, arrangements, and progress are also stored in MongoDB for that account. The first sign-in keeps what is already in the browser. Later visits use the saved account copy. The web app uses an httpOnly cookie. A mobile app sends `X-LexiLearn-Client: mobile` on `POST /api/auth/google`, stores the returned `token`, and sends `Authorization: Bearer` on later account requests. Signing out ends that saved session for the account's other devices too. Course materials still use the local JSON file. Accounts do not yet control who can read a lecture.
+- Sentence segmentation uses English `Intl.Segmenter`, falling back to the whole section where unavailable. Read-aloud uses Lexi’s Grok voice and does not highlight words in sync with the audio. Spoken study replies and oral replies use that same voice. Voice questions use the browser speech service; Chrome may send microphone audio to that service. Typing still works when the microphone is unavailable.
+
 ## Roadmap
 
 1. Authorized Webex integration and audio transcription, so a recording link can supply its spoken content directly.

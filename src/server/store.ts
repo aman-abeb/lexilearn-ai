@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import type { CompiledNotes, Course, CourseSummary, CreateCourseInput, CreateLectureInput, LectureSourceInput, Material } from "../lib/contracts";
 import { sourceListSchema, storedMaterialsSchema, storedWorkspaceSchema } from "../lib/validation";
-import { courseIdForName, createLecture, createSource, SAMPLE_COURSE, SAMPLE_MATERIAL, withSources } from "./materials";
+import { courseIdForName, createLecture, createSource, EXAMPLE_COURSES, EXAMPLE_MATERIALS, withSources } from "./materials";
 import { HttpError } from "./http";
 
 type Workspace = { version: 2; courses: Course[]; materials: Material[] };
@@ -38,6 +38,7 @@ export class MaterialStore {
   private writes: Promise<unknown> = Promise.resolve();
   constructor(private readonly filePath: string) {}
 
+  /** Saved courses and lectures only. Example content stays in the JSON catalog. */
   private async readWorkspace(): Promise<Workspace> {
     try {
       const data: unknown = JSON.parse(await readFile(this.filePath, "utf8"));
@@ -45,11 +46,44 @@ export class MaterialStore {
       const stored = storedWorkspaceSchema.parse(data);
       return restoreWorkspace(stored.materials, stored.courses);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return { version: 2, courses: [structuredClone(SAMPLE_COURSE)], materials: [structuredClone(SAMPLE_MATERIAL)] };
-      }
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return { version: 2, courses: [], materials: [] };
       throw error;
     }
+  }
+
+  /** Show the JSON examples alongside saved work, without writing them into the workspace file. */
+  private withExamples(workspace: Workspace): Workspace {
+    const courses = [...workspace.courses];
+    for (const course of EXAMPLE_COURSES) {
+      if (!courses.some(item => item.id === course.id)) courses.push(structuredClone(course));
+    }
+    const materials = [...workspace.materials];
+    for (const material of EXAMPLE_MATERIALS) {
+      if (!materials.some(item => item.id === material.id)) materials.push(structuredClone(material));
+    }
+    materials.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return { version: 2, courses, materials };
+  }
+
+  private placeExampleCourse(workspace: Workspace, courseId: string): Course | undefined {
+    const existing = workspace.courses.find(course => course.id === courseId);
+    if (existing) return existing;
+    const example = EXAMPLE_COURSES.find(course => course.id === courseId);
+    if (!example) return undefined;
+    const copy = structuredClone(example);
+    workspace.courses.push(copy);
+    return copy;
+  }
+
+  private placeExampleMaterial(workspace: Workspace, id: string): Material {
+    const existing = workspace.materials.find(material => material.id === id);
+    if (existing) return existing;
+    const example = EXAMPLE_MATERIALS.find(material => material.id === id);
+    if (!example) throw new HttpError(404, "MATERIAL_NOT_FOUND", "This lecture could not be found.");
+    this.placeExampleCourse(workspace, example.courseId);
+    const copy = structuredClone(example);
+    workspace.materials.unshift(copy);
+    return copy;
   }
 
   private mutate<T>(update: (workspace: Workspace) => T): Promise<T> {
@@ -70,12 +104,12 @@ export class MaterialStore {
     return write;
   }
 
-  async list(): Promise<Material[]> { await this.writes; return (await this.readWorkspace()).materials; }
+  async list(): Promise<Material[]> { await this.writes; return this.withExamples(await this.readWorkspace()).materials; }
   async find(id: string): Promise<Material | undefined> { return (await this.list()).find(material => material.id === id); }
 
   async listCourses(): Promise<CourseSummary[]> {
     await this.writes;
-    const workspace = await this.readWorkspace();
+    const workspace = this.withExamples(await this.readWorkspace());
     return workspace.courses.map(course => this.summarize(course, workspace));
   }
 
@@ -86,23 +120,24 @@ export class MaterialStore {
 
   createCourse(input: CreateCourseInput): Promise<CourseSummary> {
     return this.mutate(workspace => {
+      const visible = this.withExamples(workspace);
       const normalized = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
-      if (workspace.courses.some(course => normalized(course.name) === normalized(input.name) || (input.code && course.code && normalized(course.code) === normalized(input.code)))) {
+      if (visible.courses.some(course => normalized(course.name) === normalized(input.name) || (input.code && course.code && normalized(course.code) === normalized(input.code)))) {
         throw new HttpError(409, "COURSE_EXISTS", "This course is already saved. Choose it from your courses.");
       }
-      if (workspace.courses.length >= 100) throw new HttpError(409, "COURSE_LIMIT", "This workspace can hold up to 100 courses.");
+      if (visible.courses.length >= 100) throw new HttpError(409, "COURSE_LIMIT", "This workspace can hold up to 100 courses.");
       const course: Course = { id: randomUUID(), name: input.name, code: input.code ?? "", term: input.term ?? "", createdAt: new Date().toISOString(), isSample: false };
       workspace.courses.push(course);
-      return this.summarize(course, workspace);
+      return this.summarize(course, this.withExamples(workspace));
     });
   }
 
   createLecture(input: CreateLectureInput): Promise<Material> {
     return this.mutate(workspace => {
-      const course = workspace.courses.find(course => course.id === input.courseId);
+      const course = this.placeExampleCourse(workspace, input.courseId);
       if (!course) throw new HttpError(404, "COURSE_NOT_FOUND", "Choose a saved course before adding this lecture.");
-      this.checkMaterialLimit(workspace);
-      const material = createLecture(input, course, this.summarize(course, workspace).nextLectureNumber);
+      this.checkMaterialLimit(this.withExamples(workspace));
+      const material = createLecture(input, course, this.summarize(course, this.withExamples(workspace)).nextLectureNumber);
       workspace.materials.unshift(material);
       return material;
     });
@@ -111,14 +146,19 @@ export class MaterialStore {
   /** Compatibility with the original pasted-text endpoint. */
   add(material: Material): Promise<Material> {
     return this.mutate(workspace => {
-      this.checkMaterialLimit(workspace);
-      let course = workspace.courses.find(course => course.name.trim().toLowerCase() === material.course.trim().toLowerCase());
+      this.checkMaterialLimit(this.withExamples(workspace));
+      const normalized = material.course.trim().toLowerCase();
+      let course = workspace.courses.find(course => course.name.trim().toLowerCase() === normalized);
       if (!course) {
-        if (workspace.courses.length >= 100) throw new HttpError(409, "COURSE_LIMIT", "This workspace can hold up to 100 courses.");
+        const example = this.withExamples(workspace).courses.find(course => course.name.trim().toLowerCase() === normalized);
+        course = example ? this.placeExampleCourse(workspace, example.id) : undefined;
+      }
+      if (!course) {
+        if (this.withExamples(workspace).courses.length >= 100) throw new HttpError(409, "COURSE_LIMIT", "This workspace can hold up to 100 courses.");
         course = { id: courseIdForName(material.course), name: material.course, code: "", term: "", createdAt: material.createdAt, isSample: material.isSample };
         workspace.courses.push(course);
       }
-      const numbered = { ...material, courseId: course.id, lectureNumber: this.summarize(course, workspace).nextLectureNumber };
+      const numbered = { ...material, courseId: course.id, lectureNumber: this.summarize(course, this.withExamples(workspace)).nextLectureNumber };
       workspace.materials.unshift(numbered);
       return numbered;
     });
@@ -126,9 +166,8 @@ export class MaterialStore {
 
   addSources(id: string, inputs: LectureSourceInput[]): Promise<Material> {
     return this.mutate(workspace => {
-      const index = workspace.materials.findIndex(material => material.id === id);
-      if (index < 0) throw new HttpError(404, "MATERIAL_NOT_FOUND", "This lecture could not be found.");
-      const material = workspace.materials[index];
+      const material = this.placeExampleMaterial(workspace, id);
+      const index = workspace.materials.findIndex(item => item.id === material.id);
       const result = sourceListSchema.safeParse([...material.sources, ...inputs].map(({ kind, name, text, url, warnings, transcript }) => ({ kind, name, text, warnings, transcript, ...(url ? { url } : {}) })));
       if (!result.success) throw new HttpError(400, "SOURCE_LIMIT", result.error.issues[0].message);
       const updated = withSources(material, [...material.sources, ...inputs.map(createSource)]);
@@ -141,8 +180,7 @@ export class MaterialStore {
 
   saveCompilation(id: string, compilation: CompiledNotes): Promise<Material> {
     return this.mutate(workspace => {
-      const material = workspace.materials.find(material => material.id === id);
-      if (!material) throw new HttpError(404, "MATERIAL_NOT_FOUND", "This lecture could not be found.");
+      const material = this.placeExampleMaterial(workspace, id);
       // A new source may have arrived during the model request; retain it and
       // let the UI show that the saved compilation needs refreshing.
       material.compilation = compilation;
@@ -152,9 +190,8 @@ export class MaterialStore {
 
   updateSource(id: string, sourceId: string, input: LectureSourceInput): Promise<Material> {
     return this.mutate(workspace => {
-      const index = workspace.materials.findIndex(material => material.id === id);
-      if (index < 0) throw new HttpError(404, "MATERIAL_NOT_FOUND", "This lecture could not be found.");
-      const material = workspace.materials[index];
+      const material = this.placeExampleMaterial(workspace, id);
+      const index = workspace.materials.findIndex(item => item.id === material.id);
       const previous = material.sources.find(source => source.id === sourceId);
       if (!previous) throw new HttpError(404, "SOURCE_NOT_FOUND", "This lecture source could not be found.");
       const updatedAt = new Date(Math.max(Date.now(), Date.parse(previous.updatedAt ?? previous.addedAt) + 1)).toISOString();

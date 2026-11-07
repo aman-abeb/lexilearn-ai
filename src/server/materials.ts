@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Course, CreateLectureInput, CreateMaterialInput, LectureSource, LectureSourceInput, Material, MaterialSection } from "../lib/contracts";
+import { storedWorkspaceSchema } from "../lib/validation";
+import exampleWorkspaceFile from "./examples/workspace.json";
 
 export function courseIdForName(name: string): string {
   return `course-${createHash("sha256").update(name.trim().toLowerCase()).digest("hex").slice(0, 16)}`;
@@ -68,34 +70,27 @@ export function createLecture(input: CreateLectureInput, course: Course, lecture
   return withSources(material, input.sources.map(createSource));
 }
 
-const sampleText = `Machine learning is a way of finding patterns in examples. Instead of writing every rule by hand, we use data to train a model. A model is a mathematical system that uses these patterns to make a prediction about a new example.
+/** Illustrative courses and lectures for trying the app. They are not copied into the saved workspace until a student changes one. */
+const exampleWorkspace = storedWorkspaceSchema.parse(exampleWorkspaceFile);
 
-In supervised learning, each training example includes an input and a known answer called a label. For example, an email can be paired with the label "spam" or "not spam". The model learns from these labelled examples. Classification means predicting a category, while regression means predicting a numerical value.
+function exampleMaterial(material: (typeof exampleWorkspace.materials)[number]): Material {
+  return {
+    ...material,
+    courseId: material.courseId ?? "",
+    lectureNumber: material.lectureNumber ?? 1,
+    sources: material.sources ?? [],
+    compilation: material.compilation ?? null,
+  };
+}
 
-Training data is used to fit the model. Test data is kept separate and used to evaluate how well the model works on examples it did not train on. If the model memorizes the training examples but performs poorly on new ones, this is called overfitting.
+export const EXAMPLE_COURSES: Course[] = exampleWorkspace.courses;
+export const EXAMPLE_MATERIALS: Material[] = exampleWorkspace.materials.map(exampleMaterial);
 
-Accuracy is the fraction of predictions that are correct. It can be misleading when categories are very uneven. If 950 of 1,000 emails are not spam, a model that always predicts "not spam" achieves 95% accuracy, even though it finds none of the spam. We need to choose evaluation measures that match the problem.`;
+function requiredExample<T extends { id: string }>(items: T[], id: string): T {
+  const found = items.find(item => item.id === id);
+  if (!found) throw new Error(`Missing example ${id}`);
+  return found;
+}
 
-/** Illustrative fixture written for this starter, not an actual university lecture. */
-export const SAMPLE_COURSE: Course = {
-  id: "course-sample-computer-science", name: "Introduction to machine learning", code: "CS 101", term: "Sample course",
-  createdAt: "2026-11-07T00:00:00.000Z", isSample: true,
-};
-const sampleSource: LectureSource = {
-  id: "sample-lecture-notes", kind: "notes", name: "Illustrative sample notes", text: sampleText, addedAt: SAMPLE_COURSE.createdAt,
-};
-export const SAMPLE_MATERIAL: Material = {
-  id: "sample-machine-learning",
-  title: "An introduction to machine learning",
-  course: SAMPLE_COURSE.name,
-  sourceName: "Illustrative sample notes",
-  sourceText: sampleText,
-  sections: splitIntoSections(sampleText).map(section => ({ ...section, sourceIds: [sampleSource.id] })),
-  wordCount: sampleText.split(/\s+/u).length,
-  createdAt: "2026-11-07T00:00:00.000Z",
-  isSample: true,
-  courseId: SAMPLE_COURSE.id,
-  lectureNumber: 1,
-  sources: [sampleSource],
-  compilation: null,
-};
+export const SAMPLE_COURSE = requiredExample(EXAMPLE_COURSES, "course-sample-computer-science");
+export const SAMPLE_MATERIAL = requiredExample(EXAMPLE_MATERIALS, "sample-machine-learning");

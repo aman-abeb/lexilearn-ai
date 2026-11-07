@@ -1,0 +1,515 @@
+{
+  "version": 2,
+  "courses": [
+    {
+      "id": "course-sample-computer-science",
+      "name": "Introduction to machine learning",
+      "code": "CS 101",
+      "term": "Sample course",
+      "createdAt": "2026-11-07T00:00:00.000Z",
+      "isSample": true
+    },
+    {
+      "id": "course-sample-psychology",
+      "name": "Cognitive psychology",
+      "code": "PSY 210",
+      "term": "Sample course",
+      "createdAt": "2026-11-06T08:00:00.000Z",
+      "isSample": true
+    },
+    {
+      "id": "course-sample-writing",
+      "name": "Academic writing",
+      "code": "WRIT 150",
+      "term": "Sample course",
+      "createdAt": "2026-11-06T09:00:00.000Z",
+      "isSample": true
+    }
+  ],
+  "materials": [
+    {
+      "id": "sample-machine-learning",
+      "title": "An introduction to machine learning",
+      "course": "Introduction to machine learning",
+      "sourceName": "Illustrative sample notes",
+      "sourceText": "Machine learning is a way of finding patterns in examples. Instead of writing every rule by hand, we use data to train a model. A model is a mathematical system that uses these patterns to make a prediction about a new example.\n\nIn supervised learning, each training example includes an input and a known answer called a label. For example, an email can be paired with the label \"spam\" or \"not spam\". The model learns from these labelled examples. Classification means predicting a category, while regression means predicting a numerical value.\n\nTraining data is used to fit the model. Test data is kept separate and used to evaluate how well the model works on examples it did not train on. If the model memorizes the training examples but performs poorly on new ones, this is called overfitting.\n\nAccuracy is the fraction of predictions that are correct. It can be misleading when categories are very uneven. If 950 of 1,000 emails are not spam, a model that always predicts \"not spam\" achieves 95% accuracy, even though it finds none of the spam. We need to choose evaluation measures that match the problem.",
+      "sections": [
+        {
+          "id": "section-1",
+          "title": "Part 1",
+          "text": "Machine learning is a way of finding patterns in examples. Instead of writing every rule by hand, we use data to train a model. A model is a mathematical system that uses these patterns to make a prediction about a new example.",
+          "sourceLabel": "Original text · paragraph 1",
+          "sourceIds": [
+            "sample-lecture-notes"
+          ]
+        },
+        {
+          "id": "section-2",
+          "title": "Part 2",
+          "text": "In supervised learning, each training example includes an input and a known answer called a label. For example, an email can be paired with the label \"spam\" or \"not spam\". The model learns from these labelled examples. Classification means predicting a category, while regression means predicting a numerical value.",
+          "sourceLabel": "Original text · paragraph 2",
+          "sourceIds": [
+            "sample-lecture-notes"
+          ]
+        },
+        {
+          "id": "section-3",
+          "title": "Part 3",
+          "text": "Training data is used to fit the model. Test data is kept separate and used to evaluate how well the model works on examples it did not train on. If the model memorizes the training examples but performs poorly on new ones, this is called overfitting.",
+          "sourceLabel": "Original text · paragraph 3",
+          "sourceIds": [
+            "sample-lecture-notes"
+          ]
+        },
+        {
+          "id": "section-4",
+          "title": "Part 4",
+          "text": "Accuracy is the fraction of predictions that are correct. It can be misleading when categories are very uneven. If 950 of 1,000 emails are not spam, a model that always predicts \"not spam\" achieves 95% accuracy, even though it finds none of the spam. We need to choose evaluation measures that match the problem.",
+          "sourceLabel": "Original text · paragraph 4",
+          "sourceIds": [
+            "sample-lecture-notes"
+          ]
+        }
+      ],
+      "wordCount": 191,
+      "createdAt": "2026-11-07T00:00:00.000Z",
+      "isSample": true,
+      "courseId": "course-sample-computer-science",
+      "lectureNumber": 1,
+      "sources": [
+        {
+          "id": "sample-lecture-notes",
+          "kind": "notes",
+          "name": "Illustrative sample notes",
+          "text": "Machine learning is a way of finding patterns in examples. Instead of writing every rule by hand, we use data to train a model. A model is a mathematical system that uses these patterns to make a prediction about a new example.\n\nIn supervised learning, each training example includes an input and a known answer called a label. For example, an email can be paired with the label \"spam\" or \"not spam\". The model learns from these labelled examples. Classification means predicting a category, while regression means predicting a numerical value.\n\nTraining data is used to fit the model. Test data is kept separate and used to evaluate how well the model works on examples it did not train on. If the model memorizes the training examples but performs poorly on new ones, this is called overfitting.\n\nAccuracy is the fraction of predictions that are correct. It can be misleading when categories are very uneven. If 950 of 1,000 emails are not spam, a model that always predicts \"not spam\" achieves 95% accuracy, even though it finds none of the spam. We need to choose evaluation measures that match the problem.",
+          "addedAt": "2026-11-07T00:00:00.000Z"
+        }
+      ],
+      "compilation": null
+    },
+    {
+      "id": "sample-model-evaluation",
+      "title": "Precision, recall, and the confusion matrix",
+      "course": "Introduction to machine learning",
+      "courseId": "course-sample-computer-science",
+      "lectureNumber": 2,
+      "sourceName": "2 lecture sources",
+      "sourceText": "Precision is the fraction of positive predictions that are actually correct. Recall is the fraction of real positive cases that the model finds. A spam filter can raise precision by flagging only the most obvious spam, but then it misses more spam and recall falls.\n\nA confusion matrix counts true positives, false positives, true negatives, and false negatives. Accuracy hides this trade-off when one category is much more common than the other. Choose the measure that matches the cost of each kind of mistake.\n\nPrecision and recall\n\nPrecision: of the messages flagged as spam, how many really are spam?\n\nRecall: of all the real spam, how many did the model find?\n\nA confusion matrix\n\nTrue positive: spam correctly flagged.\nFalse positive: a wanted message flagged as spam.\nFalse negative: spam that was missed.\nTrue negative: a wanted message left alone.",
+      "sections": [
+        {
+          "id": "sample-evaluation-notes-part-1",
+          "title": "Part 1 · Evaluation notes",
+          "text": "Precision is the fraction of positive predictions that are actually correct. Recall is the fraction of real positive cases that the model finds. A spam filter can raise precision by flagging only the most obvious spam, but then it misses more spam and recall falls.",
+          "sourceLabel": "Evaluation notes · passage 1",
+          "sourceIds": [
+            "sample-evaluation-notes"
+          ]
+        },
+        {
+          "id": "sample-evaluation-notes-part-2",
+          "title": "Part 2 · Evaluation notes",
+          "text": "A confusion matrix counts true positives, false positives, true negatives, and false negatives. Accuracy hides this trade-off when one category is much more common than the other. Choose the measure that matches the cost of each kind of mistake.",
+          "sourceLabel": "Evaluation notes · passage 2",
+          "sourceIds": [
+            "sample-evaluation-notes"
+          ]
+        },
+        {
+          "id": "sample-evaluation-slides-part-1",
+          "title": "Part 1 · Lecture slides",
+          "text": "Precision and recall",
+          "sourceLabel": "Lecture slides · passage 1",
+          "sourceIds": [
+            "sample-evaluation-slides"
+          ]
+        },
+        {
+          "id": "sample-evaluation-slides-part-2",
+          "title": "Part 2 · Lecture slides",
+          "text": "Precision: of the messages flagged as spam, how many really are spam?",
+          "sourceLabel": "Lecture slides · passage 2",
+          "sourceIds": [
+            "sample-evaluation-slides"
+          ]
+        },
+        {
+          "id": "sample-evaluation-slides-part-3",
+          "title": "Part 3 · Lecture slides",
+          "text": "Recall: of all the real spam, how many did the model find?",
+          "sourceLabel": "Lecture slides · passage 3",
+          "sourceIds": [
+            "sample-evaluation-slides"
+          ]
+        },
+        {
+          "id": "sample-evaluation-slides-part-4",
+          "title": "Part 4 · Lecture slides",
+          "text": "A confusion matrix",
+          "sourceLabel": "Lecture slides · passage 4",
+          "sourceIds": [
+            "sample-evaluation-slides"
+          ]
+        },
+        {
+          "id": "sample-evaluation-slides-part-5",
+          "title": "Part 5 · Lecture slides",
+          "text": "True positive: spam correctly flagged.\nFalse positive: a wanted message flagged as spam.\nFalse negative: spam that was missed.\nTrue negative: a wanted message left alone.",
+          "sourceLabel": "Lecture slides · passage 5",
+          "sourceIds": [
+            "sample-evaluation-slides"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "sample-evaluation-notes",
+          "kind": "notes",
+          "name": "Evaluation notes",
+          "text": "Precision is the fraction of positive predictions that are actually correct. Recall is the fraction of real positive cases that the model finds. A spam filter can raise precision by flagging only the most obvious spam, but then it misses more spam and recall falls.\n\nA confusion matrix counts true positives, false positives, true negatives, and false negatives. Accuracy hides this trade-off when one category is much more common than the other. Choose the measure that matches the cost of each kind of mistake.",
+          "addedAt": "2026-11-06T10:00:00.000Z"
+        },
+        {
+          "id": "sample-evaluation-slides",
+          "kind": "slides",
+          "name": "Lecture slides",
+          "text": "Precision and recall\n\nPrecision: of the messages flagged as spam, how many really are spam?\n\nRecall: of all the real spam, how many did the model find?\n\nA confusion matrix\n\nTrue positive: spam correctly flagged.\nFalse positive: a wanted message flagged as spam.\nFalse negative: spam that was missed.\nTrue negative: a wanted message left alone.",
+          "addedAt": "2026-11-06T10:00:00.000Z"
+        }
+      ],
+      "compilation": null,
+      "wordCount": 140,
+      "isSample": true,
+      "createdAt": "2026-11-06T10:00:00.000Z"
+    },
+    {
+      "id": "sample-recorded-walkthrough",
+      "title": "A short recording on overfitting",
+      "course": "Introduction to machine learning",
+      "courseId": "course-sample-computer-science",
+      "lectureNumber": 3,
+      "sourceName": "2 lecture sources",
+      "sourceText": "Overfitting shows up when a model is very accurate on the examples it trained on and much less accurate on new examples. The recording walks through one fix: keep a separate test set and do not use it to choose the model.\n\nAnother fix is to prefer a simpler model when two models perform similarly. A simpler model has fewer chances to memorize accidental details in the training examples.\n\nOverfitting shows up when a model is very accurate on the examples it trained on and much less accurate on new examples. The recording walks through one fix: keep a separate test set and do not use it to choose the model.\n\nAnother fix is to prefer a simpler model when two models perform similarly. A simpler model has fewer chances to memorize accidental details in the training examples.",
+      "sections": [
+        {
+          "id": "sample-overfitting-recording-part-1",
+          "title": "Part 1 · Walkthrough recording",
+          "text": "Overfitting shows up when a model is very accurate on the examples it trained on and much less accurate on new examples. The recording walks through one fix: keep a separate test set and do not use it to choose the model.",
+          "sourceLabel": "Walkthrough recording · passage 1",
+          "sourceIds": [
+            "sample-overfitting-recording"
+          ]
+        },
+        {
+          "id": "sample-overfitting-recording-part-2",
+          "title": "Part 2 · Walkthrough recording",
+          "text": "Another fix is to prefer a simpler model when two models perform similarly. A simpler model has fewer chances to memorize accidental details in the training examples.",
+          "sourceLabel": "Walkthrough recording · passage 2",
+          "sourceIds": [
+            "sample-overfitting-recording"
+          ]
+        },
+        {
+          "id": "sample-overfitting-transcript-part-1",
+          "title": "Part 1 · Cleaned transcript",
+          "text": "Overfitting shows up when a model is very accurate on the examples it trained on and much less accurate on new examples. The recording walks through one fix: keep a separate test set and do not use it to choose the model.",
+          "sourceLabel": "Cleaned transcript · passage 1",
+          "sourceIds": [
+            "sample-overfitting-transcript"
+          ]
+        },
+        {
+          "id": "sample-overfitting-transcript-part-2",
+          "title": "Part 2 · Cleaned transcript",
+          "text": "Another fix is to prefer a simpler model when two models perform similarly. A simpler model has fewer chances to memorize accidental details in the training examples.",
+          "sourceLabel": "Cleaned transcript · passage 2",
+          "sourceIds": [
+            "sample-overfitting-transcript"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "sample-overfitting-recording",
+          "kind": "recording",
+          "name": "Walkthrough recording",
+          "text": "Overfitting shows up when a model is very accurate on the examples it trained on and much less accurate on new examples. The recording walks through one fix: keep a separate test set and do not use it to choose the model.\n\nAnother fix is to prefer a simpler model when two models perform similarly. A simpler model has fewer chances to memorize accidental details in the training examples.",
+          "url": "https://www.youtube.com/watch?v=sampleLect1",
+          "addedAt": "2026-11-06T11:00:00.000Z",
+          "transcript": {
+            "platform": "youtube",
+            "videoId": "sampleLect1",
+            "language": "en",
+            "languageName": "English",
+            "automatic": false,
+            "retrievedAt": "2026-11-06T11:00:00.000Z"
+          }
+        },
+        {
+          "id": "sample-overfitting-transcript",
+          "kind": "transcript",
+          "name": "Cleaned transcript",
+          "text": "Overfitting shows up when a model is very accurate on the examples it trained on and much less accurate on new examples. The recording walks through one fix: keep a separate test set and do not use it to choose the model.\n\nAnother fix is to prefer a simpler model when two models perform similarly. A simpler model has fewer chances to memorize accidental details in the training examples.",
+          "addedAt": "2026-11-06T11:00:00.000Z"
+        }
+      ],
+      "compilation": null,
+      "wordCount": 138,
+      "isSample": true,
+      "createdAt": "2026-11-06T11:00:00.000Z"
+    },
+    {
+      "id": "sample-memory",
+      "title": "Encoding, storage, and retrieval",
+      "course": "Cognitive psychology",
+      "courseId": "course-sample-psychology",
+      "lectureNumber": 1,
+      "sourceName": "1 lecture source",
+      "sourceText": "Encoding is the process of turning an experience into a memory that can be stored. Storage keeps that memory over time. Retrieval brings it back when you need it.\n\nA retrieval cue is a piece of information that helps you reach a stored memory. The same experience can be easy or hard to remember depending on the cue. Studying in conditions similar to the exam can make a useful cue more available.",
+      "sections": [
+        {
+          "id": "sample-memory-notes-part-1",
+          "title": "Part 1 · Memory notes",
+          "text": "Encoding is the process of turning an experience into a memory that can be stored. Storage keeps that memory over time. Retrieval brings it back when you need it.",
+          "sourceLabel": "Memory notes · passage 1",
+          "sourceIds": [
+            "sample-memory-notes"
+          ]
+        },
+        {
+          "id": "sample-memory-notes-part-2",
+          "title": "Part 2 · Memory notes",
+          "text": "A retrieval cue is a piece of information that helps you reach a stored memory. The same experience can be easy or hard to remember depending on the cue. Studying in conditions similar to the exam can make a useful cue more available.",
+          "sourceLabel": "Memory notes · passage 2",
+          "sourceIds": [
+            "sample-memory-notes"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "sample-memory-notes",
+          "kind": "notes",
+          "name": "Memory notes",
+          "text": "Encoding is the process of turning an experience into a memory that can be stored. Storage keeps that memory over time. Retrieval brings it back when you need it.\n\nA retrieval cue is a piece of information that helps you reach a stored memory. The same experience can be easy or hard to remember depending on the cue. Studying in conditions similar to the exam can make a useful cue more available.",
+          "addedAt": "2026-11-06T12:00:00.000Z"
+        }
+      ],
+      "compilation": null,
+      "wordCount": 72,
+      "isSample": true,
+      "createdAt": "2026-11-06T12:00:00.000Z"
+    },
+    {
+      "id": "sample-attention",
+      "title": "Selective and divided attention",
+      "course": "Cognitive psychology",
+      "courseId": "course-sample-psychology",
+      "lectureNumber": 2,
+      "sourceName": "1 lecture source",
+      "sourceText": "Selective attention is the ability to focus on one stream of information and ignore others. In a noisy room, you can follow one conversation and barely notice the rest.\n\nDivided attention means trying to follow more than one demanding task at the same time. Performance usually drops because the tasks compete for the same limited processing. Switching between tasks also has a cost, even when the switch feels instant.",
+      "sections": [
+        {
+          "id": "sample-attention-notes-part-1",
+          "title": "Part 1 · Attention notes",
+          "text": "Selective attention is the ability to focus on one stream of information and ignore others. In a noisy room, you can follow one conversation and barely notice the rest.",
+          "sourceLabel": "Attention notes · passage 1",
+          "sourceIds": [
+            "sample-attention-notes"
+          ]
+        },
+        {
+          "id": "sample-attention-notes-part-2",
+          "title": "Part 2 · Attention notes",
+          "text": "Divided attention means trying to follow more than one demanding task at the same time. Performance usually drops because the tasks compete for the same limited processing. Switching between tasks also has a cost, even when the switch feels instant.",
+          "sourceLabel": "Attention notes · passage 2",
+          "sourceIds": [
+            "sample-attention-notes"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "sample-attention-notes",
+          "kind": "notes",
+          "name": "Attention notes",
+          "text": "Selective attention is the ability to focus on one stream of information and ignore others. In a noisy room, you can follow one conversation and barely notice the rest.\n\nDivided attention means trying to follow more than one demanding task at the same time. Performance usually drops because the tasks compete for the same limited processing. Switching between tasks also has a cost, even when the switch feels instant.",
+          "addedAt": "2026-11-06T13:00:00.000Z"
+        }
+      ],
+      "compilation": {
+        "overview": "Attention can stay with one conversation or be split across tasks. Splitting it, or switching tasks, usually costs accuracy and speed.",
+        "sections": [
+          {
+            "id": "sample-attention-compiled-1",
+            "title": "One stream at a time",
+            "text": "Selective attention keeps one stream of information in focus and leaves other streams in the background. A conversation in a noisy room is the example used in the notes.",
+            "sourceLabel": "Compiled from Attention notes",
+            "sourceIds": [
+              "sample-attention-notes"
+            ]
+          },
+          {
+            "id": "sample-attention-compiled-2",
+            "title": "The cost of doing two things",
+            "text": "Divided attention asks the same limited processing to follow more than one demanding task. Switching between tasks has a cost even when the switch feels instant.",
+            "sourceLabel": "Compiled from Attention notes",
+            "sourceIds": [
+              "sample-attention-notes"
+            ]
+          }
+        ],
+        "keyTerms": [
+          {
+            "term": "Selective attention",
+            "meaning": "Focusing on one stream of information and ignoring others.",
+            "sourceIds": [
+              "sample-attention-notes"
+            ]
+          },
+          {
+            "term": "Divided attention",
+            "meaning": "Trying to follow more than one demanding task at the same time.",
+            "sourceIds": [
+              "sample-attention-notes"
+            ]
+          }
+        ],
+        "warnings": [],
+        "sourceIds": [
+          "sample-attention-notes"
+        ],
+        "sourceVersions": {
+          "sample-attention-notes": "2026-11-06T13:00:00.000Z"
+        },
+        "generatedAt": "2026-11-06T14:00:00.000Z",
+        "model": "example"
+      },
+      "wordCount": 69,
+      "isSample": true,
+      "createdAt": "2026-11-06T13:00:00.000Z"
+    },
+    {
+      "id": "sample-paragraphs",
+      "title": "Paragraphs with one main point",
+      "course": "Academic writing",
+      "courseId": "course-sample-writing",
+      "lectureNumber": 1,
+      "sourceName": "1 lecture source",
+      "sourceText": "A paragraph usually develops one main point. The topic sentence states that point. The following sentences explain it, give a reason, or offer an example from the source you are discussing.\n\nUnity means every sentence belongs to that point. If a sentence starts a new point, it belongs in a new paragraph. Coherence means the sentences follow one another in an order the reader can track.",
+      "sections": [
+        {
+          "id": "sample-paragraph-notes-part-1",
+          "title": "Part 1 · Paragraph notes",
+          "text": "A paragraph usually develops one main point. The topic sentence states that point. The following sentences explain it, give a reason, or offer an example from the source you are discussing.",
+          "sourceLabel": "Paragraph notes · passage 1",
+          "sourceIds": [
+            "sample-paragraph-notes"
+          ]
+        },
+        {
+          "id": "sample-paragraph-notes-part-2",
+          "title": "Part 2 · Paragraph notes",
+          "text": "Unity means every sentence belongs to that point. If a sentence starts a new point, it belongs in a new paragraph. Coherence means the sentences follow one another in an order the reader can track.",
+          "sourceLabel": "Paragraph notes · passage 2",
+          "sourceIds": [
+            "sample-paragraph-notes"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "sample-paragraph-notes",
+          "kind": "notes",
+          "name": "Paragraph notes",
+          "text": "A paragraph usually develops one main point. The topic sentence states that point. The following sentences explain it, give a reason, or offer an example from the source you are discussing.\n\nUnity means every sentence belongs to that point. If a sentence starts a new point, it belongs in a new paragraph. Coherence means the sentences follow one another in an order the reader can track.",
+          "addedAt": "2026-11-06T15:00:00.000Z",
+          "warnings": [
+            "Illustrative sample. This is not a past exam or a published handbook."
+          ]
+        }
+      ],
+      "compilation": null,
+      "wordCount": 66,
+      "isSample": true,
+      "createdAt": "2026-11-06T15:00:00.000Z"
+    },
+    {
+      "id": "sample-citations",
+      "title": "Citing ideas from other sources",
+      "course": "Academic writing",
+      "courseId": "course-sample-writing",
+      "lectureNumber": 2,
+      "sourceName": "1 lecture source",
+      "sourceText": "Why cite\n\nA citation tells the reader which idea came from which source.\n\nWhat to cite\n\nCite a fact, argument, or distinctive phrase you took from someone else.\nA common fact that every source agrees on usually does not need a citation.\n\nIn the text\n\nName the author and give the reader enough detail to find the source in your reference list.",
+      "sections": [
+        {
+          "id": "sample-citation-slides-part-1",
+          "title": "Part 1 · Citation slides",
+          "text": "Why cite",
+          "sourceLabel": "Citation slides · passage 1",
+          "sourceIds": [
+            "sample-citation-slides"
+          ]
+        },
+        {
+          "id": "sample-citation-slides-part-2",
+          "title": "Part 2 · Citation slides",
+          "text": "A citation tells the reader which idea came from which source.",
+          "sourceLabel": "Citation slides · passage 2",
+          "sourceIds": [
+            "sample-citation-slides"
+          ]
+        },
+        {
+          "id": "sample-citation-slides-part-3",
+          "title": "Part 3 · Citation slides",
+          "text": "What to cite",
+          "sourceLabel": "Citation slides · passage 3",
+          "sourceIds": [
+            "sample-citation-slides"
+          ]
+        },
+        {
+          "id": "sample-citation-slides-part-4",
+          "title": "Part 4 · Citation slides",
+          "text": "Cite a fact, argument, or distinctive phrase you took from someone else.\nA common fact that every source agrees on usually does not need a citation.",
+          "sourceLabel": "Citation slides · passage 4",
+          "sourceIds": [
+            "sample-citation-slides"
+          ]
+        },
+        {
+          "id": "sample-citation-slides-part-5",
+          "title": "Part 5 · Citation slides",
+          "text": "In the text",
+          "sourceLabel": "Citation slides · passage 5",
+          "sourceIds": [
+            "sample-citation-slides"
+          ]
+        },
+        {
+          "id": "sample-citation-slides-part-6",
+          "title": "Part 6 · Citation slides",
+          "text": "Name the author and give the reader enough detail to find the source in your reference list.",
+          "sourceLabel": "Citation slides · passage 6",
+          "sourceIds": [
+            "sample-citation-slides"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "sample-citation-slides",
+          "kind": "slides",
+          "name": "Citation slides",
+          "text": "Why cite\n\nA citation tells the reader which idea came from which source.\n\nWhat to cite\n\nCite a fact, argument, or distinctive phrase you took from someone else.\nA common fact that every source agrees on usually does not need a citation.\n\nIn the text\n\nName the author and give the reader enough detail to find the source in your reference list.",
+          "addedAt": "2026-11-06T16:00:00.000Z"
+        }
+      ],
+      "compilation": null,
+      "wordCount": 62,
+      "isSample": true,
+      "createdAt": "2026-11-06T16:00:00.000Z"
+    }
+  ]
+}

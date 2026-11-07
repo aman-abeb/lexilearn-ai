@@ -35,6 +35,27 @@ test("saved courses survive reload and concurrent lectures receive consecutive c
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
+test("example courses are read from the JSON catalog and stay out of the workspace file", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "lexilearn-examples-"));
+  try {
+    const path = join(directory, "materials.json");
+    const store = new MaterialStore(path);
+    const courses = await store.listCourses();
+    assert.deepEqual(courses.map(course => course.code), ["CS 101", "PSY 210", "WRIT 150"]);
+    assert.equal(courses.find(course => course.id === SAMPLE_COURSE.id)?.lectureCount, 3);
+    const lectures = await store.list();
+    assert.equal(lectures.find(lecture => lecture.id === SAMPLE_MATERIAL.id)?.sections[0].id, "section-1");
+    assert.equal(lectures.some(lecture => lecture.compilation), true);
+    assert.equal(lectures.some(lecture => lecture.sources.some(source => source.kind === "recording")), true);
+    await assert.rejects(readFile(path, "utf8"));
+    await store.createLecture({ ...lectureInput, courseId: SAMPLE_COURSE.id });
+    const saved = JSON.parse(await readFile(path, "utf8")) as { courses: { id: string }[]; materials: unknown[] };
+    assert.equal(saved.materials.length, 1);
+    assert.equal(saved.courses.length, 1);
+    assert.equal(saved.courses[0].id, SAMPLE_COURSE.id);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test("legacy lecture arrays gain courses without changing original text, section IDs, or files until a write", async () => {
   const directory = await mkdtemp(join(tmpdir(), "lexilearn-migration-"));
   try {
