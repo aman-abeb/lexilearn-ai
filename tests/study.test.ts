@@ -70,6 +70,39 @@ test("a conversation reply uses the latest student question and ignores exam ins
   assert.match(capture.body ?? "", /producing the answer to assessed work is not/);
 });
 
+test("an oral exam reply stays with one section and answers what the student just said", async () => {
+  const section = SAMPLE_MATERIAL.sections[0];
+  assert.ok(section);
+  const capture: { body?: string } = {};
+  const output = { text: "You named patterns in examples. Add what a model does with a new example. What is a model, in your own words?", warnings: [] };
+  const result = await provider(output, capture).oralExam(SAMPLE_MATERIAL, {
+    sectionId: section.id,
+    prompt: `Explain ${section.title} aloud in your own words.`,
+    messages: [{ role: "user", text: "A model uses examples." }],
+  });
+  assert.equal(result.text, output.text);
+  assert.match(capture.body ?? "", /A model uses examples/);
+  assert.match(capture.body ?? "", /finding patterns in examples/);
+  assert.match(capture.body ?? "", /spoken reply/);
+  assert.equal((capture.body ?? "").includes("950 of 1,000 emails are not spam"), false);
+  await assert.rejects(
+    provider(output).oralExam(SAMPLE_MATERIAL, {
+      sectionId: "missing-section",
+      prompt: "Explain this aloud.",
+      messages: [{ role: "user", text: "I am not sure." }],
+    }),
+    (error: unknown) => error instanceof HttpError && error.code === "SECTION_NOT_FOUND",
+  );
+  await assert.rejects(
+    createStudyProvider({}).oralExam(SAMPLE_MATERIAL, {
+      sectionId: section.id,
+      prompt: "Explain this aloud.",
+      messages: [{ role: "user", text: "A model uses examples." }],
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 501 && error.code === "AI_NOT_CONFIGURED",
+  );
+});
+
 test("study tools reject incomplete model output and missing configuration", async () => {
   const unconfigured = createStudyProvider({});
   assert.equal(unconfigured.configured, false);
