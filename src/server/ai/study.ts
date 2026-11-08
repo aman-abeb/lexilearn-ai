@@ -57,6 +57,21 @@ function readable(material: Material) {
   return material.sources.some(source => source.text.trim()) || readingMaterial(material).sections.some(section => section.text.trim());
 }
 
+function wait(ms: number) {
+  return new Promise(resolve => { setTimeout(resolve, ms); });
+}
+
+function requestTimedOut(error: unknown, signal: AbortSignal) {
+  return signal.aborted || (error instanceof Error && error.name === "TimeoutError");
+}
+
+function modelJson(payload: unknown) {
+  const choice = (payload as { choices?: { finish_reason?: string; message?: { content?: unknown } }[] }).choices?.[0];
+  if (choice?.finish_reason !== "stop" || typeof choice.message?.content !== "string") throw new Error("Incomplete response");
+  const text = choice.message.content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  return JSON.parse(text);
+}
+
 async function completeJson(configuration: Configuration, input: {
   instructions: string;
   payload: unknown;
@@ -68,36 +83,48 @@ async function completeJson(configuration: Configuration, input: {
   if (!configuration.apiKey) {
     throw new HttpError(501, "AI_NOT_CONFIGURED", "Study help is not connected yet. You can keep reading the lecture.");
   }
-  let response: Response;
-  try {
-    response = await (configuration.fetch ?? fetch)(`${(configuration.baseUrl || "https://api.openai.com/v1").replace(/\/$/, "")}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${configuration.apiKey}` },
-      signal: AbortSignal.timeout(input.timeout),
-      body: JSON.stringify({
-        model: configuration.model || "gpt-4.1-mini",
-        response_format: { type: "json_object" },
-        max_completion_tokens: input.maxTokens,
-        ...languageModelExtras(configuration.baseUrl),
-        messages: [
-          { role: "system", content: input.instructions },
-          { role: "user", content: JSON.stringify(input.payload) },
-        ],
-      }),
-    });
-  } catch {
-    throw new HttpError(504, "STUDY_UNAVAILABLE", input.unavailable);
+  const endpoint = `${(configuration.baseUrl || "https://api.openai.com/v1").replace(/\/$/, "")}/chat/completions`;
+  const body = JSON.stringify({
+    model: configuration.model || "gpt-4.1-mini",
+    response_format: { type: "json_object" },
+    max_completion_tokens: input.maxTokens,
+    ...languageModelExtras(configuration.baseUrl),
+    messages: [
+      { role: "system", content: input.instructions },
+      { role: "user", content: JSON.stringify(input.payload) },
+    ],
+  });
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const signal = AbortSignal.timeout(input.timeout);
+    let response: Response;
+    try {
+      response = await (configuration.fetch ?? fetch)(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${configuration.apiKey}` },
+        cache: "no-store",
+        signal,
+        body,
+      });
+    } catch (error) {
+      if (requestTimedOut(error, signal) || attempt === 3) throw new HttpError(504, "STUDY_UNAVAILABLE", input.unavailable);
+      await wait(200 * attempt);
+      continue;
+    }
+    if (response.status === 401) throw new HttpError(401, "AI_KEY_REJECTED", "The AI key was rejected. Check XAI_API_KEY or OPENAI_API_KEY in the server .env file, then restart the server.");
+    if (!response.ok) {
+      const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+      if (!retryable || attempt >= 2) throw new HttpError(502, "STUDY_UNAVAILABLE", input.unavailable);
+      await wait(200 * attempt);
+      continue;
+    }
+    try {
+      return modelJson(await response.json());
+    } catch {
+      if (attempt >= 2) throw new HttpError(502, "INVALID_STUDY_OUTPUT", input.invalid);
+      await wait(200);
+    }
   }
-  if (response.status === 401) throw new HttpError(401, "AI_KEY_REJECTED", "The AI key was rejected. Check XAI_API_KEY or OPENAI_API_KEY in the server .env file, then restart the server.");
-  if (!response.ok) throw new HttpError(502, "STUDY_UNAVAILABLE", input.unavailable);
-  try {
-    const body = await response.json();
-    const choice = body.choices?.[0];
-    if (choice?.finish_reason !== "stop" || typeof choice.message?.content !== "string") throw new Error("Incomplete response");
-    return JSON.parse(choice.message.content);
-  } catch {
-    throw new HttpError(502, "INVALID_STUDY_OUTPUT", input.invalid);
-  }
+  throw new HttpError(504, "STUDY_UNAVAILABLE", input.unavailable);
 }
 
 export function createStudyProvider(configuration: Configuration) {
@@ -239,7 +266,7 @@ Return JSON only: {"text":"your spoken reply","warnings":["a specific uncertaint
     async startPractice(material: Material, input: { sectionId?: string }): Promise<PracticeProblem> {
       if (!readable(material)) throw new HttpError(422, "NO_READABLE_SOURCES", "Add lecture notes, slides, or a transcript before starting a practice problem.");
       const context = lectureContext(material, input.sectionId);
-      const output = await completeJson(configuration, {
+      const request = {
         instructions: `You write one practice problem for a university lecture, for a reading companion designed with dyslexic students in mind.
 ${safety}
 The student must be able to answer from the supplied lecture alone. Ask them to apply an idea, explain it in their own words, or spot a mix-up. Use short sentences. Do not put the answer in the prompt. Do not ask them to complete assessed work, an exam, or an assignment.
@@ -251,39 +278,46 @@ warnings may be an empty array.`,
         timeout: 45_000,
         unavailable: "The practice problem could not be written. The lecture is still here. Please try again.",
         invalid: "The practice problem came back incomplete. The lecture is still here. Please try again.",
-      });
-      const result = practiceProblemOutputSchema.safeParse(output);
-      if (!result.success) throw new HttpError(502, "INVALID_STUDY_OUTPUT", "The practice problem came back in an unexpected form. Please try again.");
-      const section = context.sections.find(item => item.id === result.data.sectionId);
-      if (!section) throw new HttpError(502, "INVALID_STUDY_OUTPUT", "The practice problem pointed at a section that is not in this lecture. Please try again.");
-      const warnings = context.truncated
-        ? ["Part of this lecture was too long to include. Check the original notes if a detail looks incomplete.", ...result.data.warnings]
-        : result.data.warnings;
-      const session: HeldPractice = {
-        id: randomUUID(),
-        materialId: material.id,
-        prompt: result.data.prompt,
-        concept: result.data.concept,
-        sectionId: section.id,
-        sectionTitle: section.title,
-        hints: [result.data.hints[0], result.data.hints[1]],
-        expected: result.data.expected,
-        steps: result.data.steps,
-        warnings,
-        hintsUsed: 0,
-        createdAt: Date.now(),
       };
-      remember(session);
-      return {
-        id: session.id,
-        prompt: session.prompt,
-        concept: session.concept,
-        sectionId: session.sectionId,
-        sectionTitle: session.sectionTitle,
-        hintsAvailable: 2,
-        warnings: session.warnings,
-        generatedAt: new Date().toISOString(),
-      };
+      let failure = "The practice problem came back in an unexpected form. Please try again.";
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const output = await completeJson(configuration, request);
+        const parsed = practiceProblemOutputSchema.safeParse(output);
+        const section = parsed.success ? context.sections.find(item => item.id === parsed.data.sectionId) : undefined;
+        if (!parsed.success || !section) {
+          if (parsed.success) failure = "The practice problem pointed at a section that is not in this lecture. Please try again.";
+          continue;
+        }
+        const warnings = context.truncated
+          ? ["Part of this lecture was too long to include. Check the original notes if a detail looks incomplete.", ...parsed.data.warnings]
+          : parsed.data.warnings;
+        const session: HeldPractice = {
+          id: randomUUID(),
+          materialId: material.id,
+          prompt: parsed.data.prompt,
+          concept: parsed.data.concept,
+          sectionId: section.id,
+          sectionTitle: section.title,
+          hints: [parsed.data.hints[0], parsed.data.hints[1]],
+          expected: parsed.data.expected,
+          steps: parsed.data.steps,
+          warnings,
+          hintsUsed: 0,
+          createdAt: Date.now(),
+        };
+        remember(session);
+        return {
+          id: session.id,
+          prompt: session.prompt,
+          concept: session.concept,
+          sectionId: session.sectionId,
+          sectionTitle: session.sectionTitle,
+          hintsAvailable: 2,
+          warnings: session.warnings,
+          generatedAt: new Date().toISOString(),
+        };
+      }
+      throw new HttpError(502, "INVALID_STUDY_OUTPUT", failure);
     },
     async hintPractice(materialId: string, problemId: string): Promise<PracticeHint> {
       requireConfigured();

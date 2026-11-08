@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getMaterialProgress, parseProgressStore } from "../src/lib/client/reading-progress";
 import { splitSentences } from "../src/lib/client/sentences";
-import { SAMPLE_MATERIAL } from "../src/server/materials";
+import { SAMPLE_MATERIAL } from "./sample";
 
 test("sentence presentation keeps every character, including equations, decimals, and whitespace", () => {
   const source = "  A score of 0.95 is not always enough.\r\nThe equation is x = y + 2.\n\nAsk: ‘Does this hold for every case?’  Keep the exception.  ";

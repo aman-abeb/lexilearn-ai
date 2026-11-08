@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createStudyProvider } from "../src/server/ai/study";
 import { HttpError } from "../src/server/http";
-import { SAMPLE_MATERIAL } from "../src/server/materials";
+import { SAMPLE_MATERIAL } from "./sample";
 
 function provider(output: unknown, capture?: { body?: string }) {
   return createStudyProvider({
@@ -101,6 +101,75 @@ test("an oral exam reply stays with one section and answers what the student jus
     }),
     (error: unknown) => error instanceof HttpError && error.status === 501 && error.code === "AI_NOT_CONFIGURED",
   );
+});
+
+test("a dropped study connection is tried again, and a timeout is not", async () => {
+  let calls = 0;
+  const output = {
+    headline: "This lecture introduces how models learn from examples.",
+    takeaways: ["A model finds patterns in examples.", "Training uses labelled data.", "Test data checks new examples."],
+    inOneMinute: "Machine learning trains a model on examples, then checks it on new ones.",
+    warnings: [],
+  };
+  const engine = createStudyProvider({
+    apiKey: "test-only",
+    fetch: async () => {
+      calls += 1;
+      if (calls === 1) throw new TypeError("fetch failed");
+      return Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(output) } }] });
+    },
+  });
+  const result = await engine.summarize(SAMPLE_MATERIAL);
+  assert.equal(calls, 2);
+  assert.equal(result.headline, output.headline);
+  const failing = createStudyProvider({
+    apiKey: "test-only",
+    fetch: async () => { throw new TypeError("fetch failed"); },
+  });
+  await assert.rejects(
+    failing.summarize(SAMPLE_MATERIAL),
+    (error: unknown) => error instanceof HttpError && error.status === 504 && error.code === "STUDY_UNAVAILABLE",
+  );
+  let timedOut = 0;
+  const timingOut = createStudyProvider({
+    apiKey: "test-only",
+    fetch: async () => {
+      timedOut += 1;
+      const error = new Error("timed out");
+      error.name = "TimeoutError";
+      throw error;
+    },
+  });
+  await assert.rejects(
+    timingOut.summarize(SAMPLE_MATERIAL),
+    (error: unknown) => error instanceof HttpError && error.status === 504 && error.code === "STUDY_UNAVAILABLE",
+  );
+  assert.equal(timedOut, 1);
+  let refused = 0;
+  const refusedRequest = createStudyProvider({
+    apiKey: "test-only",
+    fetch: async () => {
+      refused += 1;
+      return new Response("no", { status: 400 });
+    },
+  });
+  await assert.rejects(
+    refusedRequest.summarize(SAMPLE_MATERIAL),
+    (error: unknown) => error instanceof HttpError && error.status === 502 && error.code === "STUDY_UNAVAILABLE",
+  );
+  assert.equal(refused, 1);
+  let unavailable = 0;
+  const recovered = createStudyProvider({
+    apiKey: "test-only",
+    fetch: async () => {
+      unavailable += 1;
+      if (unavailable === 1) return new Response("busy", { status: 503 });
+      return Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(output) } }] });
+    },
+  });
+  const second = await recovered.summarize(SAMPLE_MATERIAL);
+  assert.equal(unavailable, 2);
+  assert.equal(second.headline, output.headline);
 });
 
 test("a rejected OpenAI key is reported instead of a generic failure", async () => {

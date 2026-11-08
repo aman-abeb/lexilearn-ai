@@ -1,7 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Course, CreateLectureInput, CreateMaterialInput, LectureSource, LectureSourceInput, Material, MaterialSection } from "../lib/contracts";
-import { storedWorkspaceSchema } from "../lib/validation";
-import exampleWorkspaceFile from "./examples/workspace.json";
 
 export function courseIdForName(name: string): string {
   return `course-${createHash("sha256").update(name.trim().toLowerCase()).digest("hex").slice(0, 16)}`;
@@ -69,28 +67,3 @@ export function createLecture(input: CreateLectureInput, course: Course, lecture
   };
   return withSources(material, input.sources.map(createSource));
 }
-
-/** Illustrative courses and lectures for trying the app. They are not copied into the saved workspace until a student changes one. */
-const exampleWorkspace = storedWorkspaceSchema.parse(exampleWorkspaceFile);
-
-function exampleMaterial(material: (typeof exampleWorkspace.materials)[number]): Material {
-  return {
-    ...material,
-    courseId: material.courseId ?? "",
-    lectureNumber: material.lectureNumber ?? 1,
-    sources: material.sources ?? [],
-    compilation: material.compilation ?? null,
-  };
-}
-
-export const EXAMPLE_COURSES: Course[] = exampleWorkspace.courses;
-export const EXAMPLE_MATERIALS: Material[] = exampleWorkspace.materials.map(exampleMaterial);
-
-function requiredExample<T extends { id: string }>(items: T[], id: string): T {
-  const found = items.find(item => item.id === id);
-  if (!found) throw new Error(`Missing example ${id}`);
-  return found;
-}
-
-export const SAMPLE_COURSE = requiredExample(EXAMPLE_COURSES, "course-sample-computer-science");
-export const SAMPLE_MATERIAL = requiredExample(EXAMPLE_MATERIALS, "sample-machine-learning");

@@ -3,7 +3,7 @@ import test from "node:test";
 import { readingMaterial } from "../src/lib/lecture";
 import { createAdaptationProvider } from "../src/server/ai/provider";
 import { HttpError } from "../src/server/http";
-import { SAMPLE_MATERIAL } from "../src/server/materials";
+import { SAMPLE_MATERIAL } from "./sample";
 
 const section = SAMPLE_MATERIAL.sections[0];
 

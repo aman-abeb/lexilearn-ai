@@ -10,7 +10,8 @@ import { getMaterialProgress } from "../src/lib/client/reading-progress";
 import { createCompilationProvider } from "../src/server/ai/compilation";
 import { HttpError } from "../src/server/http";
 import { captionText, extractFile, extractSlides } from "../src/server/ingestion/extract";
-import { createLecture, SAMPLE_COURSE, SAMPLE_MATERIAL } from "../src/server/materials";
+import { createLecture } from "../src/server/materials";
+import { SAMPLE_COURSE, SAMPLE_MATERIAL } from "./sample";
 import { MaterialStore } from "../src/server/store";
 
 const lectureInput = { title: "Learning and memory", sources: [{ kind: "notes" as const, name: "My notes", text: "Memory is the process of encoding, storing, and retrieving information." }] };
@@ -35,24 +36,19 @@ test("saved courses survive reload and concurrent lectures receive consecutive c
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
-test("example courses are read from the JSON catalog and stay out of the workspace file", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "lexilearn-examples-"));
+test("a new workspace starts empty and writes nothing until a course is saved", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "lexilearn-empty-"));
   try {
     const path = join(directory, "materials.json");
     const store = new MaterialStore(path);
-    const courses = await store.listCourses();
-    assert.deepEqual(courses.map(course => course.code), ["CS 101", "PSY 210", "WRIT 150"]);
-    assert.equal(courses.find(course => course.id === SAMPLE_COURSE.id)?.lectureCount, 3);
-    const lectures = await store.list();
-    assert.equal(lectures.find(lecture => lecture.id === SAMPLE_MATERIAL.id)?.sections[0].id, "section-1");
-    assert.equal(lectures.some(lecture => lecture.compilation), true);
-    assert.equal(lectures.some(lecture => lecture.sources.some(source => source.kind === "recording")), true);
+    assert.deepEqual(await store.listCourses(), []);
+    assert.deepEqual(await store.list(), []);
     await assert.rejects(readFile(path, "utf8"));
-    await store.createLecture({ ...lectureInput, courseId: SAMPLE_COURSE.id });
+    const created = await store.createCourse({ name: "Psychology" });
     const saved = JSON.parse(await readFile(path, "utf8")) as { courses: { id: string }[]; materials: unknown[] };
-    assert.equal(saved.materials.length, 1);
+    assert.equal(saved.materials.length, 0);
     assert.equal(saved.courses.length, 1);
-    assert.equal(saved.courses[0].id, SAMPLE_COURSE.id);
+    assert.equal(saved.courses[0].id, created.id);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -82,7 +78,8 @@ test("a link-only lecture can gain a transcript without losing its number or pre
   const directory = await mkdtemp(join(tmpdir(), "lexilearn-recording-"));
   try {
     const store = new MaterialStore(join(directory, "materials.json"));
-    const lecture = await store.createLecture({ title: "Recorded lecture", courseId: SAMPLE_COURSE.id, sources: [{ kind: "recording", name: "Webex recording", url: "https://university.webex.com/recording/example", text: "" }] });
+    const course = await store.createCourse({ name: "Psychology" });
+    const lecture = await store.createLecture({ title: "Recorded lecture", courseId: course.id, sources: [{ kind: "recording", name: "Webex recording", url: "https://university.webex.com/recording/example", text: "" }] });
     assert.equal(lecture.sections.length, 0);
     assert.equal(lecture.wordCount, 0);
     const updated = await store.updateSource(lecture.id, lecture.sources[0].id, { ...lecture.sources[0], text: lectureInput.sources[0].text });

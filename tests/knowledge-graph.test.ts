@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildKnowledgeGraph, queryKnowledgeGraph } from "../src/lib/knowledge-graph";
-import { SAMPLE_MATERIAL } from "../src/server/materials";
+import { SAMPLE_MATERIAL } from "./sample";
 
 test("every concept edge has original evidence and valid endpoints", () => {
   const graph = buildKnowledgeGraph(SAMPLE_MATERIAL);

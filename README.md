@@ -7,6 +7,7 @@
 - [Overview](#overview)
 - [Features](#features)
 - [Quick start](#quick-start)
+- [Deploy with Coolify](#deploy-with-coolify)
 - [Configuration](#configuration)
 - [Importing lecture sources](#importing-lecture-sources)
 - [Audio and voice](#audio-and-voice)
@@ -19,9 +20,7 @@
 
 ## Overview
 
-LexiLearn brings course organization, source collection, accessible reading, and study activities into one workspace. Students can start with original lecture text and enable AI tools when they want compiled notes, explanations, or practice feedback.
-
-The included lecture provides illustrative sample content for exploring the interface. The implementation described here is the current local application.
+LexiLearn brings course organization, source collection, accessible reading, and study activities into one workspace. Students can start with original lecture text and enable AI tools when they want compiled notes, explanations, or practice feedback. A new workspace starts empty.
 
 ## Features
 
@@ -58,14 +57,14 @@ Study tools use the lecture's readable sections as context. Generated replies re
 
 ### Knowledge map and exports
 
-- **Knowledge map:** Trace Course → Lecture → Source → Concept relationships with quotations from original source text. Concepts come from compiled key terms or the sample vocabulary and are included only when a source contains the term. Add or hide terms for the current session, trace their sources, and export the graph as JSON with its evidence and provenance. Source tracing runs locally without an AI request.
+- **Knowledge map:** Trace Course → Lecture → Source → Concept relationships with quotations from original source text. Concepts come from compiled key terms and are included only when a source contains the term. Add or hide terms for the current session, trace their sources, and export the graph as JSON with its evidence and provenance. Source tracing runs locally without an AI request.
 - **Text export:** Download the lecture's study notes, key terms, and source notes as a plain-text file.
 
 The graph records where a concept appears in source text. Select a concept or ask where it is mentioned to see the course, lecture, source, and supporting quotation. Graph exports include relationship types, source identifiers, quotations, and provenance.
 
 ### Exam preparation
 
-- **Exam preparation:** Choose written self-review, an AI oral coach, or multiple-choice questions with answers and supporting passages. The oral coach responds to spoken or typed attempts using the selected lecture section. Paste specific notes or drop a TXT, MD, PDF, or PPTX file to create multiple-choice questions, and optionally request a topic, difficulty, or style. Imported exam notes are not added to the library. The included sample has ready-made questions; generating questions from other notes or with custom preferences requires the AI key and sends the notes and preferences to the configured provider. Practice results last for the session; written exam practice uses self-review against the notes.
+- **Exam preparation:** Choose written self-review, an AI oral coach, or multiple-choice questions with answers and supporting passages. The oral coach responds to spoken or typed attempts using the selected lecture section. Paste specific notes or drop a TXT, MD, PDF, or PPTX file to create multiple-choice questions, and optionally request a topic, difficulty, or style. Imported exam notes are not added to the library. Generating questions requires the AI key and sends the notes and preferences to the configured provider. Practice results last for the session; written exam practice uses self-review against the notes.
 
 | Format | How it works |
 |---|---|
@@ -87,6 +86,19 @@ npm run dev
 ```
 
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Courses, lecture sources, and original-text reading work without an AI key.
+
+## Deploy with Coolify
+
+The repository includes a `Dockerfile` for a Coolify Dockerfile build. The image listens on `PORT` (default 3000) and stores courses in `/data`.
+
+1. Create a new resource from this repository and choose the **Dockerfile** build pack.
+2. Set the published port to **3000**. Coolify injects `PORT` automatically.
+3. Add persistent storage mounted at **`/data`**. Without that volume, courses disappear when the container is replaced.
+4. Add the server environment variables from [`.env.example`](.env.example). `LEXILEARN_DATA_DIR` can stay unset; the image uses `/data`.
+5. Mark **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`** as available at build time, and set the same value at runtime. The Google sign-in button is compiled into the browser bundle.
+6. Set the health check path to **`/api/health`**.
+
+Accounts still need a reachable `MONGODB_URI`. AI study tools stay off until `XAI_API_KEY` or `OPENAI_API_KEY` is set.
 
 ## Configuration
 
@@ -124,6 +136,9 @@ cp .env.example .env.local
 | `GOOGLE_CLIENT_ID` | Google web client ID accepted by the server | Required for accounts |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google web client ID used in the browser | Same value as `GOOGLE_CLIENT_ID` |
 | `GOOGLE_MOBILE_CLIENT_IDS` | Additional accepted iOS and Android Google client IDs | Optional comma-separated list |
+| `ADMIN_EMAILS` | Google emails that stay admins | Optional comma-separated list. The first account is an admin when this is empty |
+| `ADMIN_EMAIL` | Email for the env admin sign-in | Required for the admin password form |
+| `ADMIN_PASSWORD` | Password for that admin sign-in | At least 12 characters, server-only |
 
 ### Enable AI study tools
 
@@ -143,7 +158,9 @@ Without a key, those AI actions stay unavailable and the interface says so. Orig
 
 ### Enable Google sign-in
 
-Account storage needs `MONGODB_URI`, `AUTH_SECRET` (at least 32 characters), `GOOGLE_CLIENT_ID`, and the same web client ID in `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Add iOS and Android client IDs in `GOOGLE_MOBILE_CLIENT_IDS` when a mobile client uses its own Google clients. Without those values, lectures still open and settings stay in the browser. The home page is a landing page, and **Sign in** on the demo opens the dashboard directly. Use **Account** for actual Google sign-in.
+Lectures, courses, and the admin page require a Google sign-in. Account storage needs `MONGODB_URI`, `AUTH_SECRET` (at least 32 characters), and a Google web client ID. Put that client ID in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` and the same value in `GOOGLE_CLIENT_ID`. If `GOOGLE_CLIENT_ID` is empty, the server accepts `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Add iOS and Android client IDs in `GOOGLE_MOBILE_CLIENT_IDS` when a mobile client uses its own Google clients. In Google Cloud, the OAuth client needs the JavaScript origin you use locally, such as `http://127.0.0.1:3000`. Restart the dev server after changing these values.
+
+The first Google account becomes an admin and can open **Admin** to see accounts, courses, and lectures, change roles, end another person's session, or remove an account. Emails in `ADMIN_EMAILS` stay admins. The home page stays public.
 
 Signed-in preferences, arrangements, progress, and glossary entries sync to MongoDB. The first sign-in keeps the browser's existing settings and progress; later visits use the saved account copy. Web sessions use an httpOnly cookie. A mobile client sends `X-LexiLearn-Client: mobile` on `POST /api/auth/google`, stores the returned `token`, and sends `Authorization: Bearer <token>` on later account requests. Signing out also ends the account's saved session on other devices. Course materials continue to use the local JSON repository.
 
@@ -206,7 +223,7 @@ Voice input uses the browser's speech-recognition service where supported. Type 
 2. Open **Knowledge map**, select a concept to trace its original sources, and export the graph if you want to keep your reviewed version.
 3. Open **Exam preparation** to try written review, oral coaching, or multiple-choice questions from a saved lecture or imported notes.
 
-The included lecture is explicitly labelled **illustrative sample content**, not a real university lecture. See [the demonstration guide](docs/DEMO.md) for the full walkthrough.
+See [the demonstration guide](docs/DEMO.md) for the full walkthrough.
 
 ## Development and verification
 
@@ -251,7 +268,7 @@ Tests cover course persistence, concurrent lecture numbering, legacy-data migrat
 | Data | Storage |
 |---|---|
 | Courses, lectures, extracted sources, and compiled notes | Local JSON repository in `LEXILEARN_DATA_DIR` |
-| Reading preferences, arrangements, progress, and glossary | Browser storage, with optional MongoDB account sync |
+| Reading preferences, arrangements, progress, and glossary | Browser storage, synced to MongoDB after Google sign-in |
 | Active guided-practice problems and hidden worked answers | Server memory for the active practice lifecycle |
 | Conversation, exam results, and knowledge-map edits | Current interface session |
 | Exported notes and knowledge graphs | Files downloaded by the student |
@@ -352,9 +369,8 @@ See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 
 ## Data and current limits
 
-- Example courses, lectures, notes, slides, a recording, a transcript, and compiled study notes live in `src/server/examples/workspace.json`. The app shows that catalog without copying it into the saved workspace. Adding a lecture to an example course, or changing an example lecture, copies that course into the workspace file.
-- The local workspace is stored in `.data/materials.json`, configurable with `LEXILEARN_DATA_DIR`. Courses and lectures share one atomic file. Legacy lecture arrays are migrated without changing original text or section IDs. This directory is ignored by Git.
-- This is a single-process local prototype, with up to 100 courses and 100 lectures including the examples. Do not use the local JSON repository as shared storage across serverless instances.
+- The local workspace is stored in `.data/materials.json`, configurable with `LEXILEARN_DATA_DIR`. Courses and lectures share one atomic file. Legacy lecture arrays are migrated without changing original text or section IDs. This directory is ignored by Git. The Docker image stores the same file under `/data`.
+- This is a single-process application, with up to 100 courses and 100 lectures. Do not use the local JSON repository as shared storage across serverless instances. Mount one persistent volume when deploying with Coolify.
 - A lecture can have 12 sources, 100,000 characters per source, and 160,000 characters combined. Uploaded files can be up to 10 MB; PDFs and slide decks can have up to 300 pages/slides.
 - Original uploaded binaries are not retained. Extracted text, source names, recording links, extraction notes, and generated study notes are saved.
 - Scanned pages, images, diagrams, and visual equations are not interpreted. Extraction feedback identifies empty pages and tells the student what needs checking.

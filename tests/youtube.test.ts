@@ -9,7 +9,6 @@ import { sourceInputSchema, youtubeImportSchema } from "../src/lib/validation";
 import { createCompilationProvider } from "../src/server/ai/compilation";
 import { HttpError } from "../src/server/http";
 import { formatYouTubeCaptions, importYouTubeCaptions } from "../src/server/ingestion/youtube";
-import { SAMPLE_COURSE } from "../src/server/materials";
 import { MaterialStore } from "../src/server/store";
 
 const VIDEO_ID = "aircAruvnKk";
@@ -136,7 +135,8 @@ test("imported YouTube captions survive source edits and feed the real compilati
     const imported = await importYouTubeCaptions(VIDEO_URL, { fetch: fixture.network });
     const path = join(directory, "materials.json");
     const store = new MaterialStore(path);
-    const lecture = await store.createLecture({ title: "Digital identity", courseId: SAMPLE_COURSE.id, sources: [imported.source] });
+    const course = await store.createCourse({ name: "Digital identity" });
+    const lecture = await store.createLecture({ title: "Digital identity", courseId: course.id, sources: [imported.source] });
     const restored = (await new MaterialStore(path).find(lecture.id))!;
     assert.deepEqual(restored.sources[0].transcript, imported.source.transcript);
     let prompt = "";

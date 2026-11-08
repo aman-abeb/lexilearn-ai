@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createMaterial, SAMPLE_MATERIAL } from "../src/server/materials";
+import { createMaterial } from "../src/server/materials";
+import { SAMPLE_MATERIAL } from "./sample";
 import { createExamPracticeProvider } from "../src/server/ai/exam-practice";
 import { HttpError } from "../src/server/http";
 import { notesQuestionSchema } from "../src/lib/validation";
@@ -19,18 +20,8 @@ function provider(output: unknown, finish = "stop") {
   return createExamPracticeProvider({ apiKey: "test-key", fetch: async () => Response.json({ choices: [{ finish_reason: finish, message: { content: JSON.stringify(output) } }] }) });
 }
 
-test("the original sample has meaningful questions without an AI key", async () => {
-  const result = await createExamPracticeProvider({}).generate(SAMPLE_MATERIAL);
-  assert.equal(result.origin, "sample");
-  assert.ok(result.questions.length > 0);
-  for (const item of result.questions) {
-    assert.equal(item.options.length, 4);
-    assert.ok(SAMPLE_MATERIAL.sections.find(section => section.id === item.sectionId)?.text.includes(item.evidence));
-    assert.ok(!item.options.some(option => /^section \d/i.test(option)));
-  }
-});
-
-test("custom lectures require a configured provider", async () => {
+test("lectures need an AI key before questions are generated", async () => {
+  await assert.rejects(createExamPracticeProvider({}).generate(SAMPLE_MATERIAL), (error: unknown) => error instanceof HttpError && error.code === "AI_NOT_CONFIGURED");
   await assert.rejects(createExamPracticeProvider({}).generate(material), (error: unknown) => error instanceof HttpError && error.code === "AI_NOT_CONFIGURED");
 });
 
@@ -67,10 +58,6 @@ test("rejects missing or excessive notes and prompt", () => {
   assert.equal(notesQuestionSchema.safeParse({ notes: "x".repeat(100_001) }).success, false);
   assert.equal(notesQuestionSchema.safeParse({ notes: material.sourceText, prompt: "x".repeat(1001) }).success, false);
   assert.equal(notesQuestionSchema.safeParse({ notes: material.sourceText }).success, true);
-});
-
-test("a prompt for the sample needs AI instead of silently returning unrelated stock questions", async () => {
-  await assert.rejects(createExamPracticeProvider({}).generate(SAMPLE_MATERIAL, "Focus on accuracy"), (error: unknown) => error instanceof HttpError && error.code === "AI_NOT_CONFIGURED");
 });
 
 test("keeps valid questions when other questions fail and tells the learner", async () => {

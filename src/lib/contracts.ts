@@ -128,11 +128,14 @@ export type AdaptationResult = {
   generatedAt: string;
 };
 
+export type AccountRole = "student" | "admin";
+
 export type AccountUser = {
   id: string;
   email: string;
   name: string;
   picture: string | null;
+  role: AccountRole;
 };
 
 export type ApiError = {

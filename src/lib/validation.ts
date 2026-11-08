@@ -212,6 +212,15 @@ export const googleSignInSchema = z.object({
   idToken: z.string().min(20).max(8192),
 }).strict();
 
+export const adminRoleSchema = z.object({
+  role: z.enum(["student", "admin"]),
+}).strict();
+
+export const adminSignInSchema = z.object({
+  email: z.string().trim().min(3).max(320).refine((value) => /^[^\s@]+@[^\s@]+$/.test(value), "Enter the admin email."),
+  password: z.string().min(1).max(200),
+}).strict();
+
 export const jsonObjectSchema = z.record(z.string(), z.unknown());
 
 export const storedMaterialsSchema = z.array(z.object({

@@ -6,7 +6,8 @@ import test from "node:test";
 import { createMaterialSchema } from "../src/lib/validation";
 import { createAdaptationProvider } from "../src/server/ai/provider";
 import { HttpError, readJson } from "../src/server/http";
-import { createMaterial, SAMPLE_MATERIAL } from "../src/server/materials";
+import { createMaterial } from "../src/server/materials";
+import { SAMPLE_MATERIAL } from "./sample";
 import { MaterialStore } from "../src/server/store";
 
 const input = {
@@ -53,7 +54,7 @@ test("local store persists simultaneous imports and reloads them from disk", asy
     const materials = Array.from({ length: 6 }, (_, index) => createMaterial({ ...input, title: `Notes ${index}` }));
     await Promise.all(materials.map((material) => store.add(material)));
     const restored = await new MaterialStore(path).list();
-    assert.equal(restored.length, 7);
+    assert.equal(restored.length, 6);
     for (const material of materials) {
       assert.equal(restored.find(({ id }) => id === material.id)?.sourceText, input.sourceText);
     }

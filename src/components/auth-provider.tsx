@@ -38,6 +38,7 @@ type AuthContextValue = {
   error: string | null;
   syncError: string | null;
   signInWithGoogle: (idToken: string) => Promise<void>;
+  signInAsAdmin: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   reportSyncError: (message: string | null) => void;
 };
@@ -96,6 +97,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSyncError(null);
   }, []);
 
+  const signInAsAdmin = useCallback(async (email: string, password: string) => {
+    setError(null);
+    const data = await apiRequest<SignInResponse>("/api/auth/admin", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    setUser(data.user);
+    setBundle({
+      preferences: data.preferences,
+      arrangements: data.arrangements ?? [],
+      activeArrangementId: data.activeArrangementId ?? null,
+      progress: data.progress,
+      created: data.created,
+    });
+    setSyncError(null);
+  }, []);
+
   const signOut = useCallback(async () => {
     setError(null);
     await apiRequest("/api/auth/sign-out", { method: "POST" });
@@ -109,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return <AuthContext.Provider value={{
-    user, bundle, ready, error, syncError, signInWithGoogle, signOut, reportSyncError,
+    user, bundle, ready, error, syncError, signInWithGoogle, signInAsAdmin, signOut, reportSyncError,
   }}>{children}</AuthContext.Provider>;
 }
 

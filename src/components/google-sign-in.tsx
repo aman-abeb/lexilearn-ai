@@ -82,7 +82,7 @@ export function GoogleSignIn({
   }, [appearance]);
 
   if (!CLIENT_ID) {
-    return <p className="field-help">Google sign-in is not configured yet. You can keep reading, and settings stay in this browser.</p>;
+    return <p className="field-help">Add your Google web client ID as NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env, set GOOGLE_CLIENT_ID to the same value, then restart the server. You can keep reading without an account, and settings stay in this browser.</p>;
   }
 
   return <div ref={host} className="google-sign-in" />;

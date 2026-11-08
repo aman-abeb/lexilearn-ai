@@ -11,7 +11,7 @@ export type GoogleIdentity = {
 };
 
 export function googleClientIds(
-  web = process.env.GOOGLE_CLIENT_ID,
+  web = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   mobile = process.env.GOOGLE_MOBILE_CLIENT_IDS,
 ): string[] {
   return [...new Set([web, ...(mobile ?? "").split(",")].map((id) => id?.trim()).filter((id): id is string => Boolean(id)))];

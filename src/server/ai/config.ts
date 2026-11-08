@@ -1,3 +1,9 @@
+import { setDefaultResultOrder } from "node:dns";
+
+// api.x.ai publishes IPv6 addresses that refuse connections on this network.
+// A request that starts there fails in a few milliseconds, before a problem can be written.
+setDefaultResultOrder("ipv4first");
+
 type LanguageModelConfig = { apiKey?: string; model?: string; baseUrl?: string };
 
 /** Study tools use Grok when XAI_API_KEY is set. Otherwise they use the OpenAI-compatible settings. */

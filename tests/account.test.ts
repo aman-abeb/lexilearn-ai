@@ -4,7 +4,10 @@ import { DEFAULT_READING_PREFERENCES } from "../src/lib/contracts";
 import { acceptProgressStore } from "../src/lib/client/reading-progress";
 import { safeArrangements, safePreferences } from "../src/lib/preferences";
 import { preferenceSetupSchema, readingPreferencesSchema } from "../src/lib/validation";
+import { isPublicPath, safeNextPath } from "../src/server/auth/access";
+import { adminCredentialsMatch, deleteAccountBlock, roleAfterSignIn, roleChangeBlock, storedAccountRole } from "../src/server/auth/admin";
 import { accountFromGoogleClaims, googleClientIds, googleProfilePicture } from "../src/server/auth/google";
+import { databaseNameFromUri } from "../src/server/db";
 import { readSessionToken, sessionCookie, signSession, verifySession, wantsMobileToken } from "../src/server/auth/session";
 import { HttpError } from "../src/server/http";
 
@@ -62,6 +65,47 @@ test("session tokens round-trip and ignore a short secret", async () => {
   } finally {
     if (previous === undefined) delete process.env.AUTH_SECRET;
     else process.env.AUTH_SECRET = previous;
+  }
+});
+
+test("lectures stay behind sign-in and the first account can administer people", () => {
+  assert.equal(isPublicPath("/"), true);
+  assert.equal(isPublicPath("/auth"), true);
+  assert.equal(isPublicPath("/api/auth/google"), true);
+  assert.equal(isPublicPath("/api/auth/admin"), true);
+  assert.equal(isPublicPath("/dashboard"), false);
+  assert.equal(isPublicPath("/api/materials"), false);
+  assert.equal(isPublicPath("/admin"), true);
+  assert.equal(safeNextPath("/read/sample-memory"), "/read/sample-memory");
+  assert.equal(safeNextPath("https://example.com"), "/dashboard");
+  assert.equal(safeNextPath("//example.com"), "/dashboard");
+  assert.equal(safeNextPath("/auth"), "/dashboard");
+  assert.equal(roleAfterSignIn({ email: "first@example.com", current: null, otherAdmins: 0 }, ""), "admin");
+  assert.equal(roleAfterSignIn({ email: "second@example.com", current: null, otherAdmins: 1 }, ""), "student");
+  assert.equal(roleAfterSignIn({ email: "Owner@School.edu", current: null, otherAdmins: 4 }, "owner@school.edu"), "admin");
+  assert.equal(storedAccountRole("owner@school.edu", "student", "owner@school.edu"), "admin");
+  assert.equal(roleChangeBlock({ targetEmail: "owner@school.edu", targetRole: "admin", nextRole: "student", adminCount: 2 }, "owner@school.edu"), "That email is listed in ADMIN_EMAILS, so this account stays an admin.");
+  assert.equal(roleChangeBlock({ targetEmail: "only@example.com", targetRole: "admin", nextRole: "student", adminCount: 1 }, ""), "Keep at least one admin.");
+  assert.equal(deleteAccountBlock({ actorId: "me", targetId: "me", targetRole: "admin", adminCount: 2 })?.includes("Sign out"), true);
+  const expected = { email: "admin@lexilearn.local", password: "correct-horse-battery" };
+  assert.equal(adminCredentialsMatch({ email: " Admin@LexiLearn.local ", password: "correct-horse-battery" }, expected), true);
+  assert.equal(adminCredentialsMatch({ email: "admin@lexilearn.local", password: "wrong-password-value" }, expected), false);
+  assert.equal(adminCredentialsMatch({ email: "other@lexilearn.local", password: "correct-horse-battery" }, expected), false);
+});
+
+test("account database name comes from the URI or defaults to lexilearn", () => {
+  const previous = process.env.MONGODB_DB;
+  delete process.env.MONGODB_DB;
+  try {
+    assert.equal(databaseNameFromUri("mongodb://127.0.0.1:27017/lexilearn"), "lexilearn");
+    assert.equal(databaseNameFromUri("mongodb+srv://user:pass@cluster.example.net"), "lexilearn");
+    assert.equal(databaseNameFromUri("mongodb+srv://user:pass@cluster.example.net/"), "lexilearn");
+    assert.equal(databaseNameFromUri("mongodb+srv://user:pass@cluster.example.net/students?retryWrites=true"), "students");
+    process.env.MONGODB_DB = "custom";
+    assert.equal(databaseNameFromUri("mongodb://127.0.0.1:27017/lexilearn"), "custom");
+  } finally {
+    if (previous === undefined) delete process.env.MONGODB_DB;
+    else process.env.MONGODB_DB = previous;
   }
 });
 

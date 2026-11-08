@@ -115,7 +115,7 @@ Source IDs and version timestamps allow `compilationIsCurrent()` to detect subse
 
 ## Accounts
 
-Google sign-in is optional and shared by the web app and native mobile clients.
+Google sign-in is required for lectures, courses, and admin. The marketing page and `/auth` stay public. The web app and native mobile clients share the same account.
 
 1. The client obtains a Google ID token. On the web this is Google Identity Services. On iOS or Android it is the platform Google Sign-In SDK, using a client ID listed in `GOOGLE_CLIENT_ID` or `GOOGLE_MOBILE_CLIENT_IDS`.
 2. `POST /api/auth/google` with `{ "idToken": "..." }` verifies that token against Google's certificates. The account's email must be verified.
@@ -124,9 +124,9 @@ Google sign-in is optional and shared by the web app and native mobile clients.
 5. `PUT /api/account/preferences` and `PUT /api/account/progress` save changes. Progress is limited to 100 lectures.
 6. `POST /api/auth/sign-out` clears the cookie and increments that account's session version when the presented token is still current. Older tokens stop working, including on other devices.
 
-`MONGODB_URI` and `AUTH_SECRET` (32 characters or more) are required for these routes. Missing configuration returns HTTP 503 with `MONGODB_NOT_CONFIGURED` or `AUTH_NOT_CONFIGURED`. The reading interface keeps working from browser storage.
+`MONGODB_URI` and `AUTH_SECRET` (32 characters or more) are required for these routes. The web client also needs `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. `GOOGLE_CLIENT_ID` should be the same value; when it is empty, the server accepts the public client ID. A URI with no database name uses the `lexilearn` database. Missing configuration returns HTTP 503 with `MONGODB_NOT_CONFIGURED` or `AUTH_NOT_CONFIGURED`. The reading interface keeps working from browser storage.
 
-The user document stores the Google subject, email, name, profile picture, preferences, arrangements, progress, and session version. Profile pictures are accepted only from `https` Google user-content hosts.
+The user document stores the Google subject, email, name, profile picture, role, preferences, arrangements, progress, and session version. The first account is an admin. `ADMIN_EMAILS` keeps listed addresses as admins. `GET /api/admin/overview` and the user role, revoke, and delete routes require that role. Profile pictures are accepted only from `https` Google user-content hosts. A signed session cookie or bearer token is required for workspace pages and the other API routes.
 
 ## Reading preferences
 
