@@ -1,8 +1,10 @@
 import { mkdir, readFile, rename, writeFile, unlink } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
+import type { ClientSession, Collection } from "mongodb";
 import type { CompiledNotes, Course, CourseSummary, CreateCourseInput, CreateLectureInput, LectureSourceInput, Material } from "../lib/contracts";
 import { sourceListSchema, storedMaterialsSchema, storedWorkspaceSchema } from "../lib/validation";
+import { getDb } from "./db";
 import { courseIdForName, createLecture, createSource, withSources } from "./materials";
 import { HttpError } from "./http";
 
@@ -33,21 +35,189 @@ function restoreWorkspace(materials: StoredMaterial[], courses: Course[] = []): 
   return { version: 2, courses: restoredCourses, materials: restored.sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
 }
 
-/** One atomic workspace file keeps course creation and lecture numbering consistent. */
+type WorkspacePersistence = {
+  read: () => Promise<Workspace>;
+  write: (workspace: Workspace) => Promise<void>;
+};
+
+function workspaceFromUnknown(data: unknown): Workspace {
+  if (Array.isArray(data)) return restoreWorkspace(storedMaterialsSchema.parse(data));
+  const stored = storedWorkspaceSchema.parse(data);
+  return restoreWorkspace(stored.materials, stored.courses);
+}
+
+function filePersistence(filePath: string): WorkspacePersistence {
+  return {
+    async read() {
+      try {
+        return workspaceFromUnknown(JSON.parse(await readFile(filePath, "utf8")));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return { version: 2, courses: [], materials: [] };
+        throw error;
+      }
+    },
+    async write(workspace) {
+      await mkdir(dirname(filePath), { recursive: true });
+      const temporaryFile = `${filePath}.${randomUUID()}.tmp`;
+      try {
+        await writeFile(temporaryFile, JSON.stringify(workspace, null, 2), "utf8");
+        await rename(temporaryFile, filePath);
+      } finally {
+        await unlink(temporaryFile).catch((error: NodeJS.ErrnoException) => { if (error.code !== "ENOENT") throw error; });
+      }
+    },
+  };
+}
+
+type CourseDocument = Course & { _id: string };
+type MaterialDocument = Material & { _id: string };
+type MetaDocument = { _id: "workspace"; ready: boolean };
+const WORKSPACE_META_ID = "workspace" as const;
+
+function plain<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function withoutMongoId<T extends { _id?: unknown }>(document: T): Omit<T, "_id"> {
+  const { _id, ...rest } = document;
+  return rest;
+}
+
+let workspaceIndexes: Promise<void> | null = null;
+
+async function workspaceCollections() {
+  const db = await getDb();
+  const courses = db.collection<CourseDocument>("courses");
+  const materials = db.collection<MaterialDocument>("materials");
+  const meta = db.collection<MetaDocument>("workspace_meta");
+  if (!workspaceIndexes) {
+    workspaceIndexes = Promise.all([
+      courses.createIndex({ id: 1 }, { unique: true }),
+      materials.createIndex({ id: 1 }, { unique: true }),
+      materials.createIndex({ courseId: 1 }),
+    ]).then(() => undefined).catch((error: unknown) => {
+      workspaceIndexes = null;
+      throw error;
+    });
+  }
+  await workspaceIndexes;
+  return { db, courses, materials, meta };
+}
+
+async function readLegacyFile(): Promise<Workspace | null> {
+  try {
+    return workspaceFromUnknown(JSON.parse(await readFile(resolve(process.env.LEXILEARN_DATA_DIR ?? ".data", "materials.json"), "utf8")));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function transactionsUnsupported(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : "";
+  return /replica set|Transaction numbers are only allowed/i.test(message);
+}
+
+async function replaceWorkspace(courses: Collection<CourseDocument>, materials: Collection<MaterialDocument>, meta: Collection<MetaDocument>, workspace: Workspace, session?: ClientSession) {
+  const options = session ? { session } : {};
+  const saved = plain(workspace);
+  await courses.deleteMany({}, options);
+  await materials.deleteMany({}, options);
+  if (saved.courses.length) await courses.insertMany(saved.courses.map(course => ({ ...course, _id: course.id })), options);
+  if (saved.materials.length) await materials.insertMany(saved.materials.map(material => ({ ...material, _id: material.id })), options);
+  await meta.updateOne({ _id: WORKSPACE_META_ID }, { $set: { ready: true } }, { upsert: true, ...options });
+}
+
+async function saveWorkspace(workspace: Workspace) {
+  const { db, courses, materials, meta } = await workspaceCollections();
+  const session = db.client.startSession();
+  try {
+    try {
+      await session.withTransaction(async () => replaceWorkspace(courses, materials, meta, workspace, session));
+    } catch (error) {
+      if (!transactionsUnsupported(error)) throw error;
+      await replaceWorkspace(courses, materials, meta, workspace);
+    }
+  } finally {
+    await session.endSession();
+  }
+}
+
+async function loadWorkspace(): Promise<Workspace> {
+  const { courses, materials } = await workspaceCollections();
+  const [courseDocs, materialDocs] = await Promise.all([
+    courses.find().sort({ createdAt: 1, id: 1 }).toArray(),
+    materials.find().toArray(),
+  ]);
+  try {
+    return workspaceFromUnknown({ version: 2, courses: courseDocs.map(withoutMongoId), materials: materialDocs.map(withoutMongoId) });
+  } catch {
+    throw new HttpError(500, "WORKSPACE_INVALID", "Saved courses could not be read. The database was left unchanged.");
+  }
+}
+
+let legacyImport: Promise<void> | null = null;
+
+async function importLegacyWorkspace(): Promise<void> {
+  const { courses, materials, meta } = await workspaceCollections();
+  const marker = await meta.findOne({ _id: WORKSPACE_META_ID });
+  if (marker?.ready) return;
+  if (await courses.countDocuments() || await materials.countDocuments()) {
+    await meta.updateOne({ _id: WORKSPACE_META_ID }, { $set: { ready: true } }, { upsert: true });
+    return;
+  }
+  const legacy = await readLegacyFile();
+  if (legacy && (legacy.courses.length || legacy.materials.length)) await saveWorkspace(legacy);
+  else await meta.updateOne({ _id: WORKSPACE_META_ID }, { $set: { ready: true } }, { upsert: true });
+}
+
+function ensureLegacyImport(): Promise<void> {
+  legacyImport ??= importLegacyWorkspace().catch((error: unknown) => {
+    legacyImport = null;
+    throw error;
+  });
+  return legacyImport;
+}
+
+async function withWorkspaceDatabase<T>(action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    if (error instanceof HttpError && error.code === "MONGODB_NOT_CONFIGURED") {
+      throw new HttpError(503, "MONGODB_NOT_CONFIGURED", "Add MONGODB_URI to save courses and lectures.");
+    }
+    if (error instanceof HttpError && error.code === "DATABASE_UNAVAILABLE") {
+      throw new HttpError(503, "DATABASE_UNAVAILABLE", "The database is unavailable. Courses and lectures could not be saved.");
+    }
+    if (error instanceof HttpError && error.code === "WORKSPACE_INVALID") throw error;
+    console.error("LexiLearn database failed:", error instanceof Error ? error.name : "UnknownError");
+    throw new HttpError(503, "DATABASE_UNAVAILABLE", "The database is unavailable. Courses and lectures could not be saved.");
+  }
+}
+
+function mongoPersistence(): WorkspacePersistence {
+  return {
+    read: () => withWorkspaceDatabase(async () => {
+      await ensureLegacyImport();
+      return loadWorkspace();
+    }),
+    write: workspace => withWorkspaceDatabase(async () => {
+      await ensureLegacyImport();
+      await saveWorkspace(workspace);
+    }),
+  };
+}
+
+/** Courses and lectures stay consistent across a serialized read-modify-write. */
 export class MaterialStore {
   private writes: Promise<unknown> = Promise.resolve();
-  constructor(private readonly filePath: string) {}
+  private readonly persistence: WorkspacePersistence;
+  constructor(filePath: string | WorkspacePersistence) {
+    this.persistence = typeof filePath === "string" ? filePersistence(filePath) : filePath;
+  }
 
-  private async readWorkspace(): Promise<Workspace> {
-    try {
-      const data: unknown = JSON.parse(await readFile(this.filePath, "utf8"));
-      if (Array.isArray(data)) return restoreWorkspace(storedMaterialsSchema.parse(data));
-      const stored = storedWorkspaceSchema.parse(data);
-      return restoreWorkspace(stored.materials, stored.courses);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return { version: 2, courses: [], materials: [] };
-      throw error;
-    }
+  private readWorkspace(): Promise<Workspace> {
+    return this.persistence.read();
   }
 
   private requireCourse(workspace: Workspace, courseId: string): Course {
@@ -66,14 +236,7 @@ export class MaterialStore {
     const write = this.writes.then(async () => {
       const workspace = await this.readWorkspace();
       const result = update(workspace);
-      await mkdir(dirname(this.filePath), { recursive: true });
-      const temporaryFile = `${this.filePath}.${randomUUID()}.tmp`;
-      try {
-        await writeFile(temporaryFile, JSON.stringify(workspace, null, 2), "utf8");
-        await rename(temporaryFile, this.filePath);
-      } finally {
-        await unlink(temporaryFile).catch((error: NodeJS.ErrnoException) => { if (error.code !== "ENOENT") throw error; });
-      }
+      await this.persistence.write(workspace);
       return result;
     });
     this.writes = write.catch(() => undefined);
@@ -181,4 +344,4 @@ export class MaterialStore {
 }
 
 const globalStore = globalThis as typeof globalThis & { lexilearnStore?: MaterialStore };
-export const materialStore = globalStore.lexilearnStore ??= new MaterialStore(resolve(process.env.LEXILEARN_DATA_DIR ?? ".data", "materials.json"));
+export const materialStore = globalStore.lexilearnStore ??= new MaterialStore(mongoPersistence());

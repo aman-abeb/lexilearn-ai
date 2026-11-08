@@ -89,22 +89,22 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Courses, lecture sources, a
 
 ## Deploy with Coolify
 
-The repository includes a `Dockerfile` for a Coolify Dockerfile build. The image listens on `PORT` (default 3000) and stores courses in `/data`.
+The repository includes a `Dockerfile` for a Coolify Dockerfile build. The image listens on `PORT` (default 3000). Courses, lectures, accounts, preferences, and progress are stored in MongoDB.
 
 1. Create a new resource from this repository and choose the **Dockerfile** build pack.
 2. Set the published port to **3000**. Coolify injects `PORT` automatically.
-3. Add persistent storage mounted at **`/data`**. Without that volume, courses disappear when the container is replaced.
-4. Add the server environment variables from [`.env.example`](.env.example). `LEXILEARN_DATA_DIR` can stay unset; the image uses `/data`.
+3. Set **`MONGODB_URI`** to the database that should keep the workspace. No disk volume is required for courses.
+4. Add the other server environment variables from [`.env.example`](.env.example).
 5. Mark **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`** as available at build time, and set the same value at runtime. The Google sign-in button is compiled into the browser bundle.
 6. Set the health check path to **`/api/health`**.
 
-Accounts still need a reachable `MONGODB_URI`. AI study tools stay off until `XAI_API_KEY` or `OPENAI_API_KEY` is set.
+If an older `materials.json` is already on disk, set `LEXILEARN_DATA_DIR` to its directory. The app copies that file into MongoDB once, when the database has no courses yet. AI study tools stay off until `XAI_API_KEY` or `OPENAI_API_KEY` is set.
 
 ## Configuration
 
 ### Environment file
 
-Environment configuration is optional for local reading. Copy `.env.example` to `.env.local` to customize the data directory, enable AI study tools, or enable accounts. Courses, extracted source text, recording links, and compiled notes are saved in `.data/materials.json`; set `LEXILEARN_DATA_DIR` to change the directory. Uploaded binaries are not retained. Reading preferences, saved arrangements, progress, revisit markers, and personal glossary entries are saved in the browser, with optional account sync.
+Copy `.env.example` to `.env.local` to enable the database, AI study tools, and accounts. Courses, lectures, extracted source text, recording links, and compiled notes are saved in MongoDB. Uploaded binaries are not retained. Reading preferences, saved arrangements, progress, revisit markers, and personal glossary entries are saved in the browser and copied to the signed-in account.
 
 Copy the example using the command for your shell:
 
@@ -124,14 +124,14 @@ cp .env.example .env.local
 
 | Variable | Purpose | Default or requirement |
 |---|---|---|
-| `LEXILEARN_DATA_DIR` | Directory for local course and lecture storage | `.data` |
+| `LEXILEARN_DATA_DIR` | Directory of an old `materials.json` to import once | `.data` |
 | `XAI_API_KEY` | Enables Grok study tools and Lexi narration | Optional for original-text reading |
 | `XAI_MODEL` | Model used by Grok text study tools | `grok-4.7` |
 | `XAI_BASE_URL` | Grok-compatible API root | `https://api.x.ai/v1` |
 | `OPENAI_API_KEY` | Fallback for text tools when the Grok key is empty | Optional |
 | `OPENAI_MODEL` | Fallback text model when the Grok key is empty | `gpt-4.1-mini` |
 | `OPENAI_BASE_URL` | Fallback API root when the Grok key is empty | `https://api.openai.com/v1` |
-| `MONGODB_URI` | Database connection for accounts and synced reading state | Required for accounts |
+| `MONGODB_URI` | Database for courses, lectures, accounts, and synced reading state | Required |
 | `AUTH_SECRET` | Signs account session tokens | At least 32 characters for accounts |
 | `GOOGLE_CLIENT_ID` | Google web client ID accepted by the server | Required for accounts |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google web client ID used in the browser | Same value as `GOOGLE_CLIENT_ID` |
@@ -158,11 +158,11 @@ Without a key, those AI actions stay unavailable and the interface says so. Orig
 
 ### Enable Google sign-in
 
-Lectures, courses, and the admin page require a Google sign-in. Account storage needs `MONGODB_URI`, `AUTH_SECRET` (at least 32 characters), and a Google web client ID. Put that client ID in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` and the same value in `GOOGLE_CLIENT_ID`. If `GOOGLE_CLIENT_ID` is empty, the server accepts `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Add iOS and Android client IDs in `GOOGLE_MOBILE_CLIENT_IDS` when a mobile client uses its own Google clients. In Google Cloud, the OAuth client needs the JavaScript origin you use locally, such as `http://127.0.0.1:3000`. Restart the dev server after changing these values.
+Lectures, courses, and the admin page require a Google sign-in. Account storage needs `MONGODB_URI`, `AUTH_SECRET` (at least 32 characters), and a Google web client ID. Put that client ID in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` and the same value in `GOOGLE_CLIENT_ID`. If `GOOGLE_CLIENT_ID` is empty, the server accepts `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Add iOS and Android client IDs in `GOOGLE_MOBILE_CLIENT_IDS` when a mobile client uses its own Google clients. In Google Cloud, open the same Web client and add every site under Authorized JavaScript origins, including `http://127.0.0.1:3000` and the deployed site, such as `https://lexilearn.amanuelb.dev`. A redirect URI alone does not allow the Google button. Restart the dev server after changing these values, and rebuild the deployed image so `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is included.
 
 The first Google account becomes an admin and can open **Admin** to see accounts, courses, and lectures, change roles, end another person's session, or remove an account. Emails in `ADMIN_EMAILS` stay admins. The home page stays public.
 
-Signed-in preferences, arrangements, progress, and glossary entries sync to MongoDB. The first sign-in keeps the browser's existing settings and progress; later visits use the saved account copy. Web sessions use an httpOnly cookie. A mobile client sends `X-LexiLearn-Client: mobile` on `POST /api/auth/google`, stores the returned `token`, and sends `Authorization: Bearer <token>` on later account requests. Signing out also ends the account's saved session on other devices. Course materials continue to use the local JSON repository.
+Signed-in preferences, arrangements, progress, and glossary entries sync to MongoDB. The first sign-in keeps the browser's existing settings and progress; later visits use the saved account copy. Web sessions use an httpOnly cookie. A mobile client sends `X-LexiLearn-Client: mobile` on `POST /api/auth/google`, stores the returned `token`, and sends `Authorization: Bearer <token>` on later account requests. Signing out also ends the account's saved session on other devices. Courses and lectures use the same database.
 
 ## Importing lecture sources
 
@@ -259,7 +259,7 @@ Tests cover course persistence, concurrent lecture numbering, legacy-data migrat
 
 1. React components collect source inputs and reading preferences.
 2. Next.js route handlers validate requests using shared contracts and Zod schemas.
-3. Ingestion services extract reviewable text; the local repository stores courses, lectures, sources, and compiled notes.
+3. Ingestion services extract reviewable text; MongoDB stores courses, lectures, sources, and compiled notes.
 4. Server-side AI providers generate structured study responses or MP3 narration when configured.
 5. Browser providers remember reading state and synchronize it with MongoDB when an account is signed in.
 
@@ -267,7 +267,7 @@ Tests cover course persistence, concurrent lecture numbering, legacy-data migrat
 
 | Data | Storage |
 |---|---|
-| Courses, lectures, extracted sources, and compiled notes | Local JSON repository in `LEXILEARN_DATA_DIR` |
+| Courses, lectures, extracted sources, and compiled notes | MongoDB |
 | Reading preferences, arrangements, progress, and glossary | Browser storage, synced to MongoDB after Google sign-in |
 | Active guided-practice problems and hidden worked answers | Server memory for the active practice lifecycle |
 | Conversation, exam results, and knowledge-map edits | Current interface session |
@@ -369,8 +369,8 @@ See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 
 ## Data and current limits
 
-- The local workspace is stored in `.data/materials.json`, configurable with `LEXILEARN_DATA_DIR`. Courses and lectures share one atomic file. Legacy lecture arrays are migrated without changing original text or section IDs. This directory is ignored by Git. The Docker image stores the same file under `/data`.
-- This is a single-process application, with up to 100 courses and 100 lectures. Do not use the local JSON repository as shared storage across serverless instances. Mount one persistent volume when deploying with Coolify.
+- Courses, lectures, extracted text, recording links, and compiled notes are stored in MongoDB (`courses` and `materials`). An existing `.data/materials.json` is copied in once when those collections are empty. Legacy lecture arrays are migrated without changing original text or section IDs.
+- The workspace holds up to 100 courses and 100 lectures. One database is the shared copy for the deployment. Run one application instance so lecture numbers stay consecutive.
 - A lecture can have 12 sources, 100,000 characters per source, and 160,000 characters combined. Uploaded files can be up to 10 MB; PDFs and slide decks can have up to 300 pages/slides.
 - Original uploaded binaries are not retained. Extracted text, source names, recording links, extraction notes, and generated study notes are saved.
 - Scanned pages, images, diagrams, and visual equations are not interpreted. Extraction feedback identifies empty pages and tells the student what needs checking.
@@ -378,7 +378,7 @@ See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 - AI compilation uses the available extracted text. Source coverage checks validate IDs, not the correctness or completeness of every generated sentence. No AI API key is needed to read lectures. Provider secrets stay server-side and must not use a `NEXT_PUBLIC_` prefix.
 - Reading settings, named arrangements, section progress, revisit markers, and up to 100 personal glossary entries per lecture live in the current browser. If browser storage is unavailable, changes remain usable until reload.
 - Practice problems are held in the server process for two hours, up to 40 at a time. Restarting the server drops them. Summaries, analyses, conversations, written exam answers, and oral coaching replies are not stored.
-- With Google sign-in, preferences, arrangements, and progress are also stored in MongoDB for that account. The first sign-in keeps what is already in the browser. Later visits use the saved account copy. The web app uses an httpOnly cookie. A mobile app sends `X-LexiLearn-Client: mobile` on `POST /api/auth/google`, stores the returned `token`, and sends `Authorization: Bearer` on later account requests. Signing out ends that saved session for the account's other devices too. Course materials still use the local JSON file. Accounts do not yet control who can read a lecture.
+- With Google sign-in, preferences, arrangements, and progress are stored in MongoDB for that account. The first sign-in keeps what is already in the browser. Later visits use the saved account copy. The web app uses an httpOnly cookie. A mobile app sends `X-LexiLearn-Client: mobile` on `POST /api/auth/google`, stores the returned `token`, and sends `Authorization: Bearer` on later account requests. Signing out ends that saved session for the account's other devices too. Accounts do not yet control who can read a lecture.
 - Sentence segmentation uses English `Intl.Segmenter`, falling back to the whole section where unavailable. Read-aloud uses Lexi’s Grok voice and does not highlight words in sync with the audio. Spoken study replies and oral replies use that same voice. Voice questions use the browser speech service; Chrome may send microphone audio to that service. Typing still works when the microphone is unavailable.
 
 ## Roadmap
@@ -386,7 +386,7 @@ See [architecture and contracts](docs/ARCHITECTURE.md) for request examples.
 1. Authorized Webex integration and audio transcription, so a recording link can supply its spoken content directly.
 2. Durable practice history and saved knowledge-map edits, building on the existing guided practice and source tracing.
 3. Review of compiled notes against a real lecture, including definitions, exceptions, equations, and extraction gaps.
-4. Feedback from dyslexic students and shared durable storage for course materials. Reading preferences and progress already support account sync.
+4. Feedback from dyslexic students. Reading preferences, progress, and course materials are already stored in MongoDB.
 
 ## Further documentation
 

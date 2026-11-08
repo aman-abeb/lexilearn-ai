@@ -11,15 +11,32 @@ export function apiError(status: number, code: string, message: string): Respons
   return Response.json({ error: { code, message } } satisfies ApiError, { status });
 }
 
+function firstHeader(value: string | null): string {
+  return value?.split(",")[0]?.trim() ?? "";
+}
+
+/** The origin the browser used, including the HTTPS host supplied by a reverse proxy. */
+export function publicOrigin(request: Request): string {
+  const url = new URL(request.url);
+  const host = firstHeader(request.headers.get("x-forwarded-host")) || firstHeader(request.headers.get("host"));
+  if (host) {
+    // Assigning url.host keeps the container port. Parse the public host on its own.
+    const parsedHost = new URL(`http://${host}`);
+    url.hostname = parsedHost.hostname;
+    url.port = parsedHost.port;
+  }
+  const proto = firstHeader(request.headers.get("x-forwarded-proto")).toLowerCase();
+  if (proto === "http" || proto === "https") url.protocol = `${proto}:`;
+  if ((url.protocol === "https:" && url.port === "443") || (url.protocol === "http:" && url.port === "80")) url.port = "";
+  return url.origin;
+}
+
 /** Bound the actual streamed body, including requests without Content-Length. */
 export function checkOrigin(request: Request): void {
   const origin = request.headers.get("origin");
-  const requestUrl = new URL(request.url);
-  // NextURL normalizes loopback addresses to localhost. Compare with the actual
-  // Host header so same-origin forms opened at 127.0.0.1 still work.
-  const host = request.headers.get("host");
-  if (host) requestUrl.host = host;
-  if (origin && origin !== requestUrl.origin) {
+  // NextURL normalizes loopback addresses to localhost. Compare with the public
+  // host so same-origin forms opened at 127.0.0.1, or through Coolify's proxy, still work.
+  if (origin && origin !== publicOrigin(request)) {
     throw new HttpError(403, "ORIGIN_NOT_ALLOWED", "Use this application's own material form.");
   }
 }

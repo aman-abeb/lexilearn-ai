@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { createMaterialSchema } from "../src/lib/validation";
 import { createAdaptationProvider } from "../src/server/ai/provider";
-import { HttpError, readJson } from "../src/server/http";
+import { checkOrigin, HttpError, readJson } from "../src/server/http";
 import { createMaterial } from "../src/server/materials";
 import { SAMPLE_MATERIAL } from "./sample";
 import { MaterialStore } from "../src/server/store";
@@ -75,6 +75,21 @@ test("same-origin imports use the browser's host after Next.js normalizes loopba
     await assert.rejects(readJson(request(origin), createMaterialSchema),
       (error: unknown) => error instanceof HttpError && error.status === 403);
   }
+});
+
+test("a TLS proxy can submit the form from the public https origin", () => {
+  const request = new Request("http://0.0.0.0:3000/api/auth/admin", {
+    method: "POST",
+    headers: {
+      Host: "0.0.0.0:3000",
+      "X-Forwarded-Host": "lexilearn.amanuelb.dev",
+      "X-Forwarded-Proto": "https",
+      Origin: "https://lexilearn.amanuelb.dev",
+    },
+  });
+  assert.doesNotThrow(() => checkOrigin(request));
+  const mismatched = new Request(request, { headers: { ...Object.fromEntries(request.headers), Origin: "https://unrelated.example" } });
+  assert.throws(() => checkOrigin(mismatched), (error: unknown) => error instanceof HttpError && error.status === 403);
 });
 
 test("a corrupted store is surfaced instead of overwritten", async () => {

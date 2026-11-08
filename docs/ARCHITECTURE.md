@@ -1,6 +1,6 @@
 # Application architecture
 
-LexiLearn is one Next.js App Router application. Browser components call same-origin `route.ts` handlers on the Node.js runtime. Courses, lecture metadata, original extracted text, and compiled notes share one local JSON repository.
+LexiLearn is one Next.js App Router application. Browser components call same-origin `route.ts` handlers on the Node.js runtime. Courses, lecture metadata, original extracted text, compiled notes, accounts, and synced reading progress are stored in MongoDB.
 
 ## Main flow
 
@@ -23,7 +23,7 @@ Saved course
 | `src/lib/contracts.ts`, `src/lib/validation.ts` | Shared payloads and runtime constraints |
 | `src/app/api` | Same-origin checks, request limits, validation, and service orchestration |
 | `src/server/materials.ts` | Lecture creation and source-preserving reading sections |
-| `src/server/store.ts` | Atomic course and lecture persistence, numbering, and legacy migration |
+| `src/server/store.ts` | MongoDB course and lecture persistence, numbering, and legacy migration |
 | `src/server/ingestion/extract.ts` | PDF/PPTX/text/caption extraction |
 | `src/server/ai/compilation.ts` | OpenAI-compatible lecture compilation and output/source validation |
 | `src/server/ai/provider.ts` | Reserved selected-section adaptation interface |
@@ -153,9 +153,9 @@ Sentence grouping uses English `Intl.Segmenter` without changing wording. Browse
 
 ## Persistence
 
-`.data/materials.json` now stores `{ version: 2, courses, materials }`. Legacy material arrays are upgraded in memory: original text and section IDs are preserved, course records are derived, and numbers are assigned chronologically. A subsequent write stores the upgraded workspace atomically. Corrupt files are surfaced rather than overwritten.
+MongoDB collections `courses` and `materials` store the workspace. An existing `.data/materials.json` file, shaped as `{ version: 2, courses, materials }` or a legacy lecture array, is imported once when those collections are empty. Original text and section IDs are preserved, course records are derived, and numbers are assigned chronologically. A corrupt import file is surfaced rather than overwritten.
 
-One serialized write queue covers courses, numbering, source edits, and compilation results. The prototype supports one local server process, up to 100 courses and 100 lectures. Shared/serverless deployment requires a database and user-level storage.
+One serialized write queue covers courses, numbering, source edits, and compilation results. The workspace holds up to 100 courses and 100 lectures. Accounts do not yet decide which person can read a lecture.
 
 ## Verification
 

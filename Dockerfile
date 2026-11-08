@@ -1,4 +1,5 @@
-# Coolify: use the Dockerfile build pack, publish port 3000, and mount a volume at /data.
+# Coolify: use the Dockerfile build pack, publish port 3000, and set MONGODB_URI.
+# /data is only read once to import an existing materials.json into MongoDB.
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
